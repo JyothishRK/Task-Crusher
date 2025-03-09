@@ -1,15 +1,23 @@
-const express = require('express')
-require('./db/mongoose')
-const userRouter = require('./routers/user')
-const taskRouter = require("./routers/task")
+const express = require('express');
+const cors = require('cors');
+require('./db/mongoose');
+const userRouter = require('./routers/user');
+const taskRouter = require('./routers/task');
 
-const app = express()
-const port = process.env.PORT
+const app = express();
+const port = process.env.PORT;
 
-app.use(express.json())
-app.use(userRouter)
-app.use(taskRouter)
+// Enable CORS
+app.use(cors({
+    origin: ['http://localhost:3000'], // Add frontend URLs
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
+app.use(express.json());
+app.use(userRouter);
+app.use(taskRouter);
 
 app.listen(port, () => {
-    console.log(`Server running at Port ${port}`)
-})
+    console.log(`Server running at Port ${port}`);
+});
