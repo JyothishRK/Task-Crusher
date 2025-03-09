@@ -7,10 +7,10 @@ const taskRouter = require('./routers/task');
 const app = express();
 const port = process.env.PORT;
 
-// Enable CORS
+// Enable CORS with all methods allowed
 app.use(cors({
-    origin: ['http://localhost:3000'], // Add frontend URLs
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    origin: '*', // For development - make more restrictive in production
+    methods: '*',  // Allow all methods
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
