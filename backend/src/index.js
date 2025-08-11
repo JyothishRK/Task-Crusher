@@ -7,9 +7,14 @@ const taskRouter = require('./routers/task');
 const app = express();
 const port = process.env.PORT;
 
-// Simple and effective CORS configuration
+// CORS configuration that handles missing origin headers
 app.use(cors({
-    origin: '*',
+    origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps, curl, etc.)
+        if (!origin) return callback(null, true);
+        // Allow all origins
+        callback(null, true);
+    },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
     credentials: false
@@ -17,7 +22,7 @@ app.use(cors({
 
 // Debug middleware to log CORS-related requests
 app.use((req, res, next) => {
-    console.log(`${req.method} ${req.path} - Origin: ${req.headers.origin}`);
+    console.log(`${req.method} ${req.path} - Origin: ${req.headers.origin || 'No origin header'}`);
     console.log('Headers:', req.headers);
     next();
 });
