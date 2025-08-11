@@ -33,6 +33,14 @@ app.use(cors({
 app.use((req, res, next) => {
     console.log(`${req.method} ${req.path} - Origin: ${req.headers.origin || 'No origin header'}`);
     console.log('Headers:', req.headers);
+    
+    // Add CORS headers to every response
+    if (req.headers.origin) {
+        res.header('Access-Control-Allow-Origin', req.headers.origin);
+    }
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
+    
     next();
 });
 
