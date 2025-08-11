@@ -7,6 +7,15 @@ const taskRouter = require('./routers/task');
 const app = express();
 const port = process.env.PORT;
 
+// Handle preflight OPTIONS requests first
+app.options('*', (req, res) => {
+    res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
+    res.header('Access-Control-Max-Age', '86400'); // 24 hours
+    res.sendStatus(200);
+});
+
 // CORS configuration that handles missing origin headers
 app.use(cors({
     origin: function (origin, callback) {
