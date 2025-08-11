@@ -38,8 +38,19 @@ app.use((req, res, next) => {
 // app.use(cors({...}));
 
 app.use(express.json());
-app.use(userRouter);
-app.use(taskRouter);
+app.use('/api', userRouter);
+app.use('/api', taskRouter);
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+    console.error('Error:', err);
+    res.status(500).json({ error: 'Internal Server Error' });
+});
+
+// 404 handler for unmatched routes
+app.use('*', (req, res) => {
+    res.status(404).json({ error: 'Route not found' });
+});
 
 app.listen(port, () => {
     console.log(`Server running at Port ${port}`);
