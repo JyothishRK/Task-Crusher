@@ -2,28 +2,30 @@ name: Service Keepalive
 
 on:
   schedule:
-    # Run every 2 minutes
-    - cron: '*/2 * * * *'
+    # Run every 5 minutes (more reliable than 2 minutes)
+    - cron: "*/5 * * * *"
+    # Backup schedule - every 10 minutes offset by 2 minutes
+    - cron: "2,12,22,32,42,52 * * * *"
   # Allow manual triggering for testing
   workflow_dispatch:
 
 jobs:
   keepalive:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Ping Health Endpoint
         run: |
           # Use SERVICE_URL from repository secrets, fallback to localhost for testing
           SERVICE_URL="${{ secrets.SERVICE_URL || 'http://localhost:3000' }}"
-          
+
           echo "🚀 Starting health check..."
           echo "Target URL: $SERVICE_URL/health"
           echo "Timestamp: $(date -u +"%Y-%m-%dT%H:%M:%S.%3NZ")"
-          
+
           # Set timeout and retry options for curl
           CURL_OPTS="-s -w \n%{http_code} --connect-timeout 30 --max-time 60"
-          
+
           # Make HTTP GET request with error handling
           if response=$(curl $CURL_OPTS "$SERVICE_URL/health" 2>/dev/null); then
             # Extract response body and status code
@@ -57,9 +59,9 @@ jobs:
             echo "🌐 URL: $SERVICE_URL/health"
             echo "⚠️  Possible causes: service down, network issues, or DNS problems"
           fi
-          
+
           echo "🏁 Health check completed at $(date -u +"%Y-%m-%dT%H:%M:%S.%3NZ")"
           echo "---"
-          
+
           # Always exit successfully to keep workflow running
           exit 0

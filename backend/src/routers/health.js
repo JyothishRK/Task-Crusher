@@ -4,11 +4,12 @@ const router = new express.Router();
 // Health check endpoint - lightweight, no database operations
 router.get('/health', (req, res) => {
     const startTime = Date.now();
+    const timestamp = new Date().toISOString();
     
     try {
         const response = {
             status: 'ok',
-            timestamp: new Date().toISOString(),
+            timestamp: timestamp,
             uptime: process.uptime(),
             service: 'task-app'
         };
@@ -18,18 +19,20 @@ router.get('/health', (req, res) => {
         
         res.status(200).json(response);
         
-        // Optional: Log for monitoring (minimal logging)
-        console.log(`Health check completed in ${responseTime}ms`);
+        // Enhanced logging for Render visibility
+        console.log(`✅ [HEALTH] ${timestamp} - Health check SUCCESS (${responseTime}ms)`);
+        console.log(`⏱️  [HEALTH] Service uptime: ${Math.floor(process.uptime())}s`);
+        console.log(`🔄 [HEALTH] Keepalive ping received - service staying active`);
         
     } catch (error) {
         const response = {
             status: 'error',
-            timestamp: new Date().toISOString(),
+            timestamp: timestamp,
             message: 'Service temporarily unavailable'
         };
         
         res.status(500).json(response);
-        console.error('Health check error:', error.message);
+        console.error(`❌ [HEALTH] ${timestamp} - Health check ERROR:`, error.message);
     }
 });
 
