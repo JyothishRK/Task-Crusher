@@ -181,6 +181,95 @@ const logAuthSuccess = (userId, context = null) => {
     console.log(logMessage);
 };
 
+/**
+ * Logs recurring task operation errors
+ * @param {string} operation - Operation name (e.g., 'generation', 'deletion', 'update')
+ * @param {string} message - Error message
+ * @param {any} data - Additional error data
+ */
+const logRecurringTaskError = (operation, message, data = null) => {
+    if (!isLoggingEnabled()) return;
+    
+    const logMessage = formatLogMessage(LOG_LEVELS.ERROR, `RECURRING_TASK_${operation.toUpperCase()}_ERROR: ${message}`, data);
+    console.error(logMessage);
+};
+
+/**
+ * Logs recurring task operation warnings
+ * @param {string} operation - Operation name
+ * @param {string} message - Warning message
+ * @param {any} data - Additional warning data
+ */
+const logRecurringTaskWarning = (operation, message, data = null) => {
+    if (!isLoggingEnabled()) return;
+    
+    const logMessage = formatLogMessage(LOG_LEVELS.WARN, `RECURRING_TASK_${operation.toUpperCase()}_WARNING: ${message}`, data);
+    console.warn(logMessage);
+};
+
+/**
+ * Logs recurring task operation information
+ * @param {string} operation - Operation name
+ * @param {string} message - Info message
+ * @param {any} data - Additional info data
+ */
+const logRecurringTaskInfo = (operation, message, data = null) => {
+    if (!isLoggingEnabled()) return;
+    
+    const logMessage = formatLogMessage(LOG_LEVELS.INFO, `RECURRING_TASK_${operation.toUpperCase()}_INFO: ${message}`, data);
+    console.log(logMessage);
+};
+
+/**
+ * Logs cron job execution events
+ * @param {string} jobName - Cron job name
+ * @param {string} status - Status (START, SUCCESS, ERROR)
+ * @param {any} data - Job execution data
+ */
+const logCronJob = (jobName, status, data = null) => {
+    if (!isLoggingEnabled()) return;
+    
+    const level = status === 'ERROR' ? LOG_LEVELS.ERROR : LOG_LEVELS.INFO;
+    const logMessage = formatLogMessage(level, `CRON_JOB_${jobName.toUpperCase()}_${status}: ${status === 'ERROR' ? 'Job failed' : 'Job executed'}`, data);
+    
+    if (status === 'ERROR') {
+        console.error(logMessage);
+    } else {
+        console.log(logMessage);
+    }
+};
+
+/**
+ * Logs task validation errors with detailed context
+ * @param {string} validationType - Type of validation (e.g., 'subtask', 'recurring')
+ * @param {string} message - Validation error message
+ * @param {any} context - Validation context
+ */
+const logValidationError = (validationType, message, context = null) => {
+    if (!isLoggingEnabled()) return;
+    
+    const logMessage = formatLogMessage(LOG_LEVELS.ERROR, `VALIDATION_${validationType.toUpperCase()}_ERROR: ${message}`, context);
+    console.error(logMessage);
+};
+
+/**
+ * Logs performance metrics for monitoring
+ * @param {string} operation - Operation name
+ * @param {number} duration - Duration in milliseconds
+ * @param {any} metrics - Additional performance metrics
+ */
+const logPerformanceMetrics = (operation, duration, metrics = null) => {
+    if (!isLoggingEnabled()) return;
+    
+    const performanceData = {
+        duration: `${duration}ms`,
+        ...metrics
+    };
+    
+    const logMessage = formatLogMessage(LOG_LEVELS.INFO, `PERFORMANCE_${operation.toUpperCase()}: Operation completed`, performanceData);
+    console.log(logMessage);
+};
+
 module.exports = {
     LOG_LEVELS,
     logAuthError,
@@ -190,6 +279,12 @@ module.exports = {
     logSecurityEvent,
     logAuthFailure,
     logAuthSuccess,
+    logRecurringTaskError,
+    logRecurringTaskWarning,
+    logRecurringTaskInfo,
+    logCronJob,
+    logValidationError,
+    logPerformanceMetrics,
     sanitizeLogData,
     formatLogMessage
 };
