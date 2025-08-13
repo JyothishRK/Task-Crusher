@@ -4,7 +4,8 @@
   "main": "index.js",
   "scripts": {
     "start": "node src/index.js",
-    "dev": "env-cmd nodemon src/index.js"
+    "dev": "env-cmd nodemon src/index.js",
+    "test": "node tests/health.test.js"
   },
   "keywords": [],
   "author": "",

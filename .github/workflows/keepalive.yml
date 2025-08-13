@@ -1,0 +1,65 @@
+name: Service Keepalive
+
+on:
+  schedule:
+    # Run every 2 minutes
+    - cron: '*/2 * * * *'
+  # Allow manual triggering for testing
+  workflow_dispatch:
+
+jobs:
+  keepalive:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Ping Health Endpoint
+        run: |
+          # Use SERVICE_URL from repository secrets, fallback to localhost for testing
+          SERVICE_URL="${{ secrets.SERVICE_URL || 'http://localhost:3000' }}"
+          
+          echo "🚀 Starting health check..."
+          echo "Target URL: $SERVICE_URL/health"
+          echo "Timestamp: $(date -u +"%Y-%m-%dT%H:%M:%S.%3NZ")"
+          
+          # Set timeout and retry options for curl
+          CURL_OPTS="-s -w \n%{http_code} --connect-timeout 30 --max-time 60"
+          
+          # Make HTTP GET request with error handling
+          if response=$(curl $CURL_OPTS "$SERVICE_URL/health" 2>/dev/null); then
+            # Extract response body and status code
+            http_code=$(echo "$response" | tail -n1)
+            response_body=$(echo "$response" | head -n -1)
+            
+            echo "HTTP Status Code: $http_code"
+            echo "Response Body: $response_body"
+            
+            # Detailed success/failure logging
+            if [ "$http_code" = "200" ]; then
+              echo "✅ Health check SUCCESSFUL"
+              echo "📊 Service is responding normally"
+              
+              # Try to parse and log service info from response
+              if echo "$response_body" | grep -q '"status":"ok"'; then
+                echo "🟢 Service status: OK"
+                uptime=$(echo "$response_body" | grep -o '"uptime":[0-9.]*' | cut -d':' -f2 || echo "unknown")
+                echo "⏱️  Service uptime: ${uptime}s"
+              fi
+            else
+              echo "❌ Health check FAILED"
+              echo "🔴 HTTP Status: $http_code"
+              echo "📝 Response: $response_body"
+              echo "⚠️  Service may be experiencing issues"
+            fi
+          else
+            # Handle curl command failures (network issues, timeouts, etc.)
+            echo "❌ Health check FAILED - Network Error"
+            echo "🔴 Could not connect to service"
+            echo "🌐 URL: $SERVICE_URL/health"
+            echo "⚠️  Possible causes: service down, network issues, or DNS problems"
+          fi
+          
+          echo "🏁 Health check completed at $(date -u +"%Y-%m-%dT%H:%M:%S.%3NZ")"
+          echo "---"
+          
+          # Always exit successfully to keep workflow running
+          exit 0
