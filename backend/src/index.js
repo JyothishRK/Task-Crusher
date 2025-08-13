@@ -3,37 +3,41 @@ const cors = require('cors');
 require('./db/mongoose');
 const userRouter = require('./routers/user');
 const taskRouter = require('./routers/task');
+const healthRouter = require('./routers/health');
 
 const app = express();
 const port = process.env.PORT;
 
-// Enable CORS with proper configuration
-app.use(cors({
-    origin: function (origin, callback) {
-        // Allow requests with no origin (like mobile apps or curl requests)
-        if (!origin) return callback(null, true);
-        
-        // Allow localhost for development
-        if (origin.startsWith('http://localhost:') || origin.startsWith('https://localhost:')) {
-            return callback(null, true);
-        }
-        
-        // Allow your production domain if you have one
-        // if (origin === 'https://yourdomain.com') {
-        //     return callback(null, true);
-        // }
-        
-        // Allow all origins for now (you can restrict this in production)
-        return callback(null, true);
-    },
-    credentials: true, // Allow credentials
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
-    exposedHeaders: ['Content-Range', 'X-Content-Range'],
-    maxAge: 86400, // Cache preflight request for 24 hours
-    preflightContinue: false,
-    optionsSuccessStatus: 204
-}));
+// Handle preflight OPTIONS requests first
+app.options('*', (req, res) => {
+    res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.header('Access-Control-Max-Age', '86400'); // 24 hours
+    res.sendStatus(200);
+});
+
+// CORS middleware that runs before all routes
+app.use((req, res, next) => {
+    // Add CORS headers to every response
+    if (req.headers.origin) {
+        res.header('Access-Control-Allow-Origin', req.headers.origin);
+    }
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
+    res.header('Access-Control-Allow-Credentials', 'true');
+    
+    // Debug logging
+    console.log(`${req.method} ${req.path} - Origin: ${req.headers.origin || 'No origin header'}`);
+    console.log('Headers:', req.headers);
+    
+    next();
+});
+
+// Remove the cors() middleware since we're handling it manually
+// app.use(cors({...}));
+
 
 // Handle preflight requests
 app.options('*', cors());
@@ -46,6 +50,7 @@ app.get('/api/test', (req, res) => {
 app.use(express.json());
 app.use('/api', userRouter);
 app.use('/api', taskRouter);
+app.use('/', healthRouter);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

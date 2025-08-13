@@ -42,6 +42,21 @@ const userSchema = new mongoose.Schema({
             }
         }
     },
+    emailEnabled: {
+        type: Boolean,
+        default: true
+    },
+    notificationTime: {
+        type: String,
+        default: "09:00",
+        validate(value) {
+            // Validate time format HH:MM (24-hour format)
+            const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
+            if (!timeRegex.test(value)) {
+                throw new Error("Time must be in HH:MM format (24-hour)");
+            }
+        }
+    },
     tokens: [{
         token : {
             type : String,
@@ -58,7 +73,7 @@ const userSchema = new mongoose.Schema({
 userSchema.virtual('tasks', {
     ref: 'Task',
     localField: '_id',
-    foreignField: 'owner'
+    foreignField: 'userId'
 });
 
 userSchema.methods.toJSON = function() {
@@ -103,10 +118,10 @@ userSchema.pre('save', async function(next) {
     next()
 })
 
-//User Deletion -> All correspnding task deletion
+//User Deletion -> All corresponding task deletion
 userSchema.pre('deleteOne', async function (next) {
     const user = this
-    await Task.deleteMany({owner: user._id})
+    await Task.deleteMany({userId: user._id})
     next()
 })
 
