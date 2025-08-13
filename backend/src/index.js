@@ -38,10 +38,30 @@ app.use((req, res, next) => {
 // Remove the cors() middleware since we're handling it manually
 // app.use(cors({...}));
 
+
+// Handle preflight requests
+app.options('*', cors());
+
+// Test endpoint to verify API is working
+app.get('/api/test', (req, res) => {
+    res.json({ message: 'API is working!', timestamp: new Date().toISOString() });
+});
+
 app.use(express.json());
 app.use('/api', userRouter);
 app.use('/api', taskRouter);
 app.use('/', healthRouter);
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+    console.error('Error:', err);
+    res.status(500).json({ error: 'Internal Server Error' });
+});
+
+// 404 handler for unmatched routes
+app.use('*', (req, res) => {
+    res.status(404).json({ error: 'Route not found' });
+});
 
 app.listen(port, () => {
     console.log(`Server running at Port ${port}`);
