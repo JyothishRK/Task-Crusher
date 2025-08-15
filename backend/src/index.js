@@ -5,9 +5,7 @@ require('./db/mongoose');
 const userRouter = require('./routers/user');
 const taskRouter = require('./routers/task');
 const healthRouter = require('./routers/health');
-const internalRouter = require('./routers/internal');
 const { validateCookieConfig } = require('./utils/cookieConfig');
-const { ErrorHandler } = require('./utils/errorHandler');
 
 const app = express();
 const port = process.env.PORT;
@@ -55,11 +53,13 @@ app.use(express.json());
 app.use(cookieParser());
 app.use('/api', userRouter);
 app.use('/api', taskRouter);
-app.use('/internal', internalRouter);
 app.use('/', healthRouter);
 
-// Enhanced error handling middleware
-app.use(ErrorHandler.middleware());
+// Error handling middleware
+app.use((err, req, res, next) => {
+    console.error('Error:', err);
+    res.status(500).json({ error: 'Internal Server Error' });
+});
 
 // 404 handler for unmatched routes
 app.use('*', (req, res) => {
