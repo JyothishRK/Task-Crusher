@@ -1,46 +1,48 @@
 const express = require('express');
 const cors = require('cors');
+const cookieParser = require('cookie-parser');
 require('./db/mongoose');
 const userRouter = require('./routers/user');
 const taskRouter = require('./routers/task');
 const healthRouter = require('./routers/health');
+const { validateCookieConfig } = require('./utils/cookieConfig');
 
 const app = express();
 const port = process.env.PORT;
 
-// Handle preflight OPTIONS requests first
-app.options('*', (req, res) => {
-    res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
-    res.header('Access-Control-Allow-Credentials', 'true');
-    res.header('Access-Control-Max-Age', '86400'); // 24 hours
-    res.sendStatus(200);
-});
+// Validate cookie configuration on startup
+validateCookieConfig();
 
-// CORS middleware that runs before all routes
-app.use((req, res, next) => {
-    // Add CORS headers to every response
-    if (req.headers.origin) {
-        res.header('Access-Control-Allow-Origin', req.headers.origin);
-    }
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
-    res.header('Access-Control-Allow-Credentials', 'true');
-    
-    // Debug logging
-    console.log(`${req.method} ${req.path} - Origin: ${req.headers.origin || 'No origin header'}`);
-    console.log('Headers:', req.headers);
-    
-    next();
-});
+// Configure CORS for cookie-based authentication
+const corsOptions = {
+    origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+        
+        // In development, allow all origins
+        if (process.env.NODE_ENV === 'development') {
+            return callback(null, true);
+        }
+        
+        // In production, you should specify allowed origins
+        const allowedOrigins = process.env.ALLOWED_ORIGINS ? 
+            process.env.ALLOWED_ORIGINS.split(',') : 
+            ['http://localhost:3000', 'http://localhost:3001']; // Default dev origins
+        
+        if (allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    credentials: true, // Essential for cookie-based authentication
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'X-Requested-With', 'Accept', 'Origin'],
+    maxAge: 86400 // 24 hours cache for preflight requests
+};
 
-// Remove the cors() middleware since we're handling it manually
-// app.use(cors({...}));
-
-
-// Handle preflight requests
-app.options('*', cors());
+// Apply CORS middleware
+app.use(cors(corsOptions));
 
 // Test endpoint to verify API is working
 app.get('/api/test', (req, res) => {
@@ -48,6 +50,7 @@ app.get('/api/test', (req, res) => {
 });
 
 app.use(express.json());
+app.use(cookieParser());
 app.use('/api', userRouter);
 app.use('/api', taskRouter);
 app.use('/', healthRouter);
