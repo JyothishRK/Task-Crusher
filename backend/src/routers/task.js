@@ -1,7 +1,6 @@
 const express = require('express');
 const Task = require('../models/task');
 const auth = require('../middleware/auth');
-const WorkerTrigger = require('../utils/workerTrigger');
 
 const router = new express.Router();
 
@@ -14,15 +13,6 @@ router.post("/tasks", auth, async (req, res) => {
 
     try {
         await task.save();
-        
-        // Trigger worker processing for recurring tasks (don't await to avoid blocking response)
-        if (task.repeatType && task.repeatType !== 'none') {
-            WorkerTrigger.safeTrigger(WorkerTrigger.triggerTaskCreation, task._id.toString())
-                .catch(err => {
-                    console.error('Failed to trigger task creation worker:', err);
-                });
-        }
-        
         res.status(201).send(task);
     } catch (e) {
         res.status(400).send(e);
@@ -93,8 +83,7 @@ router.get("/tasks/:id", auth, async (req, res) => {
 
 // Update a task
 router.patch("/tasks/:id", auth, async (req, res) => {
-    // Remove repeatType from allowed updates as per requirements
-    const allowedUpdates = ['title', 'description', 'dueDate', 'priority', 'category', 'isCompleted', 'parentTaskId', 'links', 'additionalNotes'];
+    const allowedUpdates = ['title', 'description', 'dueDate', 'priority', 'category', 'isCompleted', 'repeatType'];
     const updates = Object.keys(req.body);
     const isValidOperation = updates.every((update) => {
         return allowedUpdates.includes(update);
@@ -114,25 +103,11 @@ router.patch("/tasks/:id", auth, async (req, res) => {
             return res.status(404).send({ error: 'Task not found' });
         }
 
-        // Check if task is being marked as completed
-        const wasCompleted = task.isCompleted;
-        const willBeCompleted = req.body.isCompleted;
-        const isBeingCompleted = !wasCompleted && willBeCompleted;
-
         updates.forEach((update) => {
             task[update] = req.body[update];
         });
 
         await task.save();
-        
-        // Trigger worker processing for task completion (don't await to avoid blocking response)
-        if (isBeingCompleted && task.repeatType && task.repeatType !== 'none') {
-            WorkerTrigger.safeTrigger(WorkerTrigger.triggerTaskCompletion, task._id.toString())
-                .catch(err => {
-                    console.error('Failed to trigger task completion worker:', err);
-                });
-        }
-        
         res.send(task);
     } catch (e) {
         res.status(400).send(e);
@@ -149,14 +124,6 @@ router.delete("/tasks/:id", auth, async (req, res) => {
 
         if (!task) {
             return res.status(404).send({ error: 'Task not found' });
-        }
-
-        // Trigger worker processing for recurring task deletion (don't await to avoid blocking response)
-        if (task.repeatType && task.repeatType !== 'none') {
-            WorkerTrigger.safeTrigger(WorkerTrigger.triggerTaskDeletion, task._id.toString(), req.user._id.toString())
-                .catch(err => {
-                    console.error('Failed to trigger task deletion worker:', err);
-                });
         }
 
         res.send(task);
@@ -224,62 +191,6 @@ router.get("/tasks/today", auth, async (req, res) => {
         }).sort({ priority: -1, dueDate: 1 });
 
         res.send(tasks);
-    } catch (e) {
-        res.status(500).send(e);
-    }
-});
-
-// Get a task with its sub-tasks
-router.get("/tasks/:id/hierarchy", auth, async (req, res) => {
-    try {
-        // Find main task
-        const task = await Task.findOne({
-            _id: req.params.id,
-            userId: req.user._id
-        });
-
-        if (!task) {
-            return res.status(404).send({ error: 'Task not found' });
-        }
-
-        // Find sub-tasks
-        const subTasks = await Task.find({
-            parentTaskId: req.params.id,
-            userId: req.user._id
-        }).sort({ dueDate: 1 });
-
-        res.send({
-            ...task.toObject(),
-            subTasks
-        });
-    } catch (e) {
-        res.status(500).send(e);
-    }
-});
-
-// Get sub-tasks for a parent task
-router.get("/tasks/:id/subtasks", auth, async (req, res) => {
-    try {
-        const subTasks = await Task.find({
-            parentTaskId: req.params.id,
-            userId: req.user._id
-        }).sort({ dueDate: 1 });
-
-        res.send(subTasks);
-    } catch (e) {
-        res.status(500).send(e);
-    }
-});
-
-// Get recurring task instances
-router.get("/tasks/:id/recurring", auth, async (req, res) => {
-    try {
-        const recurringTasks = await Task.find({
-            parentRecurringId: req.params.id,
-            userId: req.user._id
-        }).sort({ dueDate: 1 });
-
-        res.send(recurringTasks);
     } catch (e) {
         res.status(500).send(e);
     }
