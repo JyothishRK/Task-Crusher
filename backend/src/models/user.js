@@ -2,9 +2,15 @@ const mongoose = require('mongoose')
 const validater = require('validator')
 const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
-const Task = require('../models/task')
+const CounterService = require('../services/counterService')
 
 const userSchema = new mongoose.Schema({
+    userId: {
+        type: Number,
+        required: true,
+        unique: true,
+        index: true
+    },
     name : {
         type: String,
         required : true,
@@ -107,20 +113,31 @@ userSchema.statics.findByCredentials = async (email, password) => {
     return user
 }
 
-//Password Hashing
+//Password Hashing and userId assignment
 userSchema.pre('save', async function(next) {
     const user = this
 
-    if(user.isModified('password')) {
-        user.password = await bcrypt.hash(user.password, 8);
-    }
+    try {
+        // Assign userId for new documents
+        if (user.isNew && !user.userId) {
+            user.userId = await CounterService.getNextSequence('users');
+        }
 
-    next()
+        if(user.isModified('password')) {
+            user.password = await bcrypt.hash(user.password, 8);
+        }
+
+        next()
+    } catch (error) {
+        next(error);
+    }
 })
 
 //User Deletion -> All corresponding task deletion
 userSchema.pre('deleteOne', async function (next) {
     const user = this
+    // Import Task here to avoid circular dependency
+    const Task = require('./task')
     await Task.deleteMany({userId: user._id})
     next()
 })
