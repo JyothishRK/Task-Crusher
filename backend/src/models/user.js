@@ -3,8 +3,13 @@ const validater = require('validator')
 const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
 const Task = require('../models/task')
+const { getNextSequence } = require('../utils/counterUtils')
 
 const userSchema = new mongoose.Schema({
+    userId: {
+        type: Number,
+        unique: true
+    },
     name : {
         type: String,
         required : true,
@@ -70,9 +75,13 @@ const userSchema = new mongoose.Schema({
     timestamps : true,
 })
 
+// Index for better query performance
+userSchema.index({ userId: 1 });
+userSchema.index({ email: 1 });
+
 userSchema.virtual('tasks', {
     ref: 'Task',
-    localField: '_id',
+    localField: 'userId',
     foreignField: 'userId'
 });
 
@@ -88,7 +97,7 @@ userSchema.methods.toJSON = function() {
 
 userSchema.methods.generateAuthToken = async function() {
     const user = this
-    const token = jwt.sign({_id: user._id.toString()}, process.env.JWT_SECRET)
+    const token = jwt.sign({userId: user.userId, _id: user._id.toString()}, process.env.JWT_SECRET)
     user.tokens = user.tokens.concat({token})
     await user.save()   
     return token
@@ -107,10 +116,29 @@ userSchema.statics.findByCredentials = async (email, password) => {
     return user
 }
 
-//Password Hashing
+//Find user by numeric userId
+userSchema.statics.findByUserId = async (userId) => {
+    const user = await User.findOne({ userId })
+    if(!user) {
+        throw new Error("User not found")
+    }
+    return user
+}
+
+//Generate userId and Password Hashing
 userSchema.pre('save', async function(next) {
     const user = this
 
+    // Generate userId for new users
+    if(user.isNew && !user.userId) {
+        try {
+            user.userId = await getNextSequence('userId');
+        } catch (error) {
+            return next(new Error(`Failed to generate userId: ${error.message}`));
+        }
+    }
+
+    // Hash password if modified
     if(user.isModified('password')) {
         user.password = await bcrypt.hash(user.password, 8);
     }
@@ -119,9 +147,18 @@ userSchema.pre('save', async function(next) {
 })
 
 //User Deletion -> All corresponding task deletion
-userSchema.pre('deleteOne', async function (next) {
+userSchema.pre('deleteOne', { document: true, query: false }, async function (next) {
     const user = this
-    await Task.deleteMany({userId: user._id})
+    await Task.deleteMany({userId: user.userId})
+    next()
+})
+
+// Also handle findOneAndDelete
+userSchema.pre('findOneAndDelete', async function (next) {
+    const user = await this.model.findOne(this.getQuery())
+    if (user) {
+        await Task.deleteMany({userId: user.userId})
+    }
     next()
 })
 

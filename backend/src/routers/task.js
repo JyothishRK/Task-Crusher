@@ -8,7 +8,7 @@ const router = new express.Router();
 router.post("/tasks", auth, async (req, res) => {
     const task = new Task({
         ...req.body,
-        userId: req.user._id
+        userId: req.user.userId || req.user._id
     });
 
     try {
@@ -51,7 +51,7 @@ router.get("/tasks", auth, async (req, res) => {
 
     try {
         const tasks = await Task.find({
-            userId: req.user._id,
+            userId: req.user.userId || req.user._id,
             ...match
         }).sort(sort)
         .limit(parseInt(req.query.limit) || 10)
@@ -66,10 +66,20 @@ router.get("/tasks", auth, async (req, res) => {
 // Get a specific task by ID
 router.get("/tasks/:id", auth, async (req, res) => {
     try {
-        const task = await Task.findOne({
-            _id: req.params.id,
-            userId: req.user._id
-        });
+        // Try to find by numeric taskId first, then fallback to ObjectId
+        let task;
+        const id = req.params.id;
+        const userId = req.user.userId || req.user._id;
+        
+        if (!isNaN(id)) {
+            // If id is numeric, search by taskId
+            task = await Task.findOne({ taskId: parseInt(id), userId });
+        }
+        
+        if (!task) {
+            // Fallback to ObjectId search for backward compatibility
+            task = await Task.findOne({ _id: id, userId });
+        }
 
         if (!task) {
             return res.status(404).send({ error: 'Task not found' });
@@ -83,7 +93,7 @@ router.get("/tasks/:id", auth, async (req, res) => {
 
 // Update a task
 router.patch("/tasks/:id", auth, async (req, res) => {
-    const allowedUpdates = ['title', 'description', 'dueDate', 'priority', 'category', 'isCompleted', 'repeatType'];
+    const allowedUpdates = ['title', 'description', 'dueDate', 'priority', 'category', 'isCompleted', 'repeatType', 'links', 'additionalDetails', 'parentId'];
     const updates = Object.keys(req.body);
     const isValidOperation = updates.every((update) => {
         return allowedUpdates.includes(update);
@@ -94,10 +104,20 @@ router.patch("/tasks/:id", auth, async (req, res) => {
     }
 
     try {
-        const task = await Task.findOne({
-            _id: req.params.id,
-            userId: req.user._id
-        });
+        // Try to find by numeric taskId first, then fallback to ObjectId
+        let task;
+        const id = req.params.id;
+        const userId = req.user.userId || req.user._id;
+        
+        if (!isNaN(id)) {
+            // If id is numeric, search by taskId
+            task = await Task.findOne({ taskId: parseInt(id), userId });
+        }
+        
+        if (!task) {
+            // Fallback to ObjectId search for backward compatibility
+            task = await Task.findOne({ _id: id, userId });
+        }
 
         if (!task) {
             return res.status(404).send({ error: 'Task not found' });
@@ -117,10 +137,20 @@ router.patch("/tasks/:id", auth, async (req, res) => {
 // Delete a task
 router.delete("/tasks/:id", auth, async (req, res) => {
     try {
-        const task = await Task.findOneAndDelete({
-            _id: req.params.id,
-            userId: req.user._id
-        });
+        // Try to find and delete by numeric taskId first, then fallback to ObjectId
+        let task;
+        const id = req.params.id;
+        const userId = req.user.userId || req.user._id;
+        
+        if (!isNaN(id)) {
+            // If id is numeric, search by taskId
+            task = await Task.findOneAndDelete({ taskId: parseInt(id), userId });
+        }
+        
+        if (!task) {
+            // Fallback to ObjectId search for backward compatibility
+            task = await Task.findOneAndDelete({ _id: id, userId });
+        }
 
         if (!task) {
             return res.status(404).send({ error: 'Task not found' });
@@ -136,7 +166,7 @@ router.delete("/tasks/:id", auth, async (req, res) => {
 router.get("/tasks/priority/:priority", auth, async (req, res) => {
     try {
         const tasks = await Task.find({
-            userId: req.user._id,
+            userId: req.user.userId || req.user._id,
             priority: req.params.priority
         }).sort({ dueDate: 1 });
 
@@ -150,7 +180,7 @@ router.get("/tasks/priority/:priority", auth, async (req, res) => {
 router.get("/tasks/category/:category", auth, async (req, res) => {
     try {
         const tasks = await Task.find({
-            userId: req.user._id,
+            userId: req.user.userId || req.user._id,
             category: req.params.category
         }).sort({ dueDate: 1 });
 
@@ -164,7 +194,7 @@ router.get("/tasks/category/:category", auth, async (req, res) => {
 router.get("/tasks/overdue", auth, async (req, res) => {
     try {
         const tasks = await Task.find({
-            userId: req.user._id,
+            userId: req.user.userId || req.user._id,
             isCompleted: false,
             dueDate: { $lt: new Date() }
         }).sort({ dueDate: 1 });
@@ -183,7 +213,7 @@ router.get("/tasks/today", auth, async (req, res) => {
         const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
 
         const tasks = await Task.find({
-            userId: req.user._id,
+            userId: req.user.userId || req.user._id,
             dueDate: {
                 $gte: startOfDay,
                 $lt: endOfDay

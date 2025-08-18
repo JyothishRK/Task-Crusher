@@ -25,8 +25,17 @@ const auth = async (req, res, next) => {
         // Verify JWT token
         const decoded = jwt.verify(token, process.env.JWT_SECRET)
         
-        // Find user with matching token
-        const user = await User.findOne({_id : decoded._id, 'tokens.token' : token})
+        // Find user with matching token - prioritize numeric userId if available
+        let user;
+        if (decoded.userId) {
+            // New numeric ID approach
+            user = await User.findOne({userId: decoded.userId, 'tokens.token': token});
+        } else if (decoded._id) {
+            // Fallback to ObjectId for backward compatibility
+            user = await User.findOne({_id: decoded._id, 'tokens.token': token});
+        } else {
+            throw new Error('Invalid token format');
+        }
 
         if(!user) {
             const context = {
@@ -38,7 +47,9 @@ const auth = async (req, res, next) => {
             };
             
             logAuthFailure('User not found or token invalid', context);
-            logSecurityEvent('Authentication with invalid user or token', { userId: decoded._id });
+            logSecurityEvent('Authentication with invalid user or token', { 
+                userId: decoded.userId || decoded._id 
+            });
             throw new Error('User not found or token invalid')
         }
 
@@ -50,7 +61,7 @@ const auth = async (req, res, next) => {
             method: req.method
         };
         
-        logAuthSuccess(user._id.toString(), context);
+        logAuthSuccess(user.userId ? user.userId.toString() : user._id.toString(), context);
 
         // Attach token and user to request object
         req.token = token
