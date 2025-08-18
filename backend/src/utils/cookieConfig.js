@@ -8,31 +8,40 @@ const getCookieOptions = () => {
     const nodeEnv = process.env.NODE_ENV || 'development'
     const isProduction = nodeEnv === 'production'
     
-    // Auto-detect secure flag based on environment if not explicitly set
+    // For development, use simple settings that work with localhost
+    if (!isProduction) {
+        console.log('Using development cookie settings for localhost');
+        return {
+            httpOnly: true,
+            secure: false, // Allow HTTP in development
+            sameSite: 'Lax',
+            maxAge: parseInt(process.env.COOKIE_MAX_AGE) || 86400000,
+            path: '/'
+            // No domain specified - will default to localhost
+        };
+    }
+    
+    // Production settings
     let cookieSecure;
     if (process.env.COOKIE_SECURE === 'auto' || process.env.COOKIE_SECURE === undefined) {
-        cookieSecure = isProduction;
+        cookieSecure = true; // Always secure in production
     } else {
         cookieSecure = process.env.COOKIE_SECURE === 'true';
     }
     
-    // Default to Lax for good balance of security and functionality
     const cookieSameSite = process.env.COOKIE_SAME_SITE || 'Lax'
-    
-    // Default to 24 hours (86400000 milliseconds)
     const cookieMaxAge = parseInt(process.env.COOKIE_MAX_AGE) || 86400000
     
-    // Configure domain based on environment
     const cookieOptions = {
-        httpOnly: true, // Always true for security
+        httpOnly: true,
         secure: cookieSecure,
         sameSite: cookieSameSite,
         maxAge: cookieMaxAge,
-        path: '/' // Available for all routes
+        path: '/'
     }
     
-    // Only set domain in production to avoid localhost issues
-    if (isProduction && process.env.COOKIE_DOMAIN) {
+    // Set domain in production if specified
+    if (process.env.COOKIE_DOMAIN) {
         cookieOptions.domain = process.env.COOKIE_DOMAIN;
     }
     
