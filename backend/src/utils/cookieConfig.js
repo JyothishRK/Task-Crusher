@@ -22,13 +22,21 @@ const getCookieOptions = () => {
     // Default to 24 hours (86400000 milliseconds)
     const cookieMaxAge = parseInt(process.env.COOKIE_MAX_AGE) || 86400000
     
-    return {
+    // Configure domain based on environment
+    const cookieOptions = {
         httpOnly: true, // Always true for security
         secure: cookieSecure,
         sameSite: cookieSameSite,
         maxAge: cookieMaxAge,
         path: '/' // Available for all routes
     }
+    
+    // Only set domain in production to avoid localhost issues
+    if (isProduction && process.env.COOKIE_DOMAIN) {
+        cookieOptions.domain = process.env.COOKIE_DOMAIN;
+    }
+    
+    return cookieOptions;
 }
 
 const getTokenCookieName = () => {
