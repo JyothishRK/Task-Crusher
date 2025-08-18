@@ -8,16 +8,32 @@ const getCookieOptions = () => {
     const nodeEnv = process.env.NODE_ENV || 'development'
     const isProduction = nodeEnv === 'production'
     
-    // For development, use simple settings that work with localhost
-    if (!isProduction) {
-        console.log('Using development cookie settings for localhost');
+    // Check if we're in cross-origin development mode
+    // (frontend on localhost, backend on remote server)
+    const isCrossOriginDev = process.env.CROSS_ORIGIN_DEV === 'true' || 
+                            (!isProduction && process.env.SERVICE_URL && process.env.SERVICE_URL.includes('onrender.com'))
+    
+    if (isCrossOriginDev) {
+        console.log('Using cross-origin cookie settings for localhost frontend -> remote backend');
         return {
             httpOnly: true,
-            secure: false, // Allow HTTP in development
+            secure: true, // Required for SameSite=None
+            sameSite: 'None', // Required for cross-origin cookies
+            maxAge: parseInt(process.env.COOKIE_MAX_AGE) || 86400000,
+            path: '/'
+            // No domain specified - allows cross-origin
+        };
+    }
+    
+    // For local development (both FE and BE on localhost)
+    if (!isProduction) {
+        console.log('Using local development cookie settings');
+        return {
+            httpOnly: true,
+            secure: false, // Allow HTTP in local development
             sameSite: 'Lax',
             maxAge: parseInt(process.env.COOKIE_MAX_AGE) || 86400000,
             path: '/'
-            // No domain specified - will default to localhost
         };
     }
     
