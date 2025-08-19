@@ -1,6 +1,7 @@
 const express = require('express');
 const Task = require('../models/task');
 const auth = require('../middleware/auth');
+const { buildTaskFilters, buildSortCriteria, buildPaginationOptions } = require('../utils/taskQueryUtils');
 
 const router = new express.Router();
 
@@ -19,43 +20,20 @@ router.post("/tasks", auth, async (req, res) => {
     }
 });
 
-// Get all tasks for the authenticated user with filtering, pagination, and sorting
+// Get all top-level tasks for the authenticated user with filtering, pagination, and sorting
 // GET: /tasks?completed=true&priority=high&category=work&limit=10&skip=0&sortBy=dueDate:asc
 router.get("/tasks", auth, async (req, res) => {
-    const match = {};
-    const sort = {};
-
-    // Filter by completion status
-    if (req.query.completed !== undefined) {
-        match.isCompleted = req.query.completed === "true";
-    }
-
-    // Filter by priority
-    if (req.query.priority) {
-        match.priority = req.query.priority;
-    }
-
-    // Filter by category
-    if (req.query.category) {
-        match.category = req.query.category;
-    }
-
-    // Sort options
-    if (req.query.sortBy) {
-        const parts = req.query.sortBy.split(":");
-        sort[parts[0]] = (parts[1] === 'desc') ? -1 : 1;
-    } else {
-        // Default sort by due date ascending
-        sort.dueDate = 1;
-    }
-
     try {
-        const tasks = await Task.find({
-            userId: req.user.userId || req.user._id,
-            ...match
-        }).sort(sort)
-        .limit(parseInt(req.query.limit) || 10)
-        .skip(parseInt(req.query.skip) || 0);
+        const userId = req.user.userId || req.user._id;
+        // Only return top-level tasks (parentId is null)
+        const match = buildTaskFilters(req.query, { userId, parentId: null });
+        const sort = buildSortCriteria(req.query.sortBy);
+        const { limit, skip } = buildPaginationOptions(req.query);
+
+        const tasks = await Task.find(match)
+            .sort(sort)
+            .limit(limit)
+            .skip(skip);
 
         res.send(tasks);
     } catch (e) {
@@ -221,6 +199,40 @@ router.get("/tasks/today", auth, async (req, res) => {
         }).sort({ priority: -1, dueDate: 1 });
 
         res.send(tasks);
+    } catch (e) {
+        res.status(500).send(e);
+    }
+});
+
+// Get subtasks for a specific parent task
+// GET: /tasks/:taskId/subtasks?completed=true&priority=high&category=work&limit=10&skip=0&sortBy=dueDate:asc
+router.get("/tasks/:taskId/subtasks", auth, async (req, res) => {
+    try {
+        const taskId = parseInt(req.params.taskId);
+        const userId = req.user.userId || req.user._id;
+
+        // Validate taskId parameter
+        if (isNaN(taskId)) {
+            return res.status(400).send({ error: 'Invalid taskId parameter' });
+        }
+
+        // Verify parent task exists and belongs to the user
+        const parentTask = await Task.findOne({ taskId, userId });
+        if (!parentTask) {
+            return res.status(404).send({ error: 'Parent task not found' });
+        }
+
+        // Build query for subtasks
+        const match = buildTaskFilters(req.query, { userId, parentId: taskId });
+        const sort = buildSortCriteria(req.query.sortBy);
+        const { limit, skip } = buildPaginationOptions(req.query);
+
+        const subtasks = await Task.find(match)
+            .sort(sort)
+            .limit(limit)
+            .skip(skip);
+
+        res.send(subtasks);
     } catch (e) {
         res.status(500).send(e);
     }
