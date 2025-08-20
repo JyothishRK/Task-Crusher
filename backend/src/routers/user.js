@@ -5,15 +5,37 @@ const auth = require('../middleware/auth')
 const multer = require('multer')
 const sharp = require('sharp')
 const { sendWelcomeEmail, sendAccountDeletionEmail } = require('../emails/account')
+const { setAuthCookie, clearAuthCookie } = require('../utils/tokenUtils')
+const { logAuthError, logAuthInfo, logSecurityEvent } = require('../utils/logger')
 
 router.post("/users", async (req, res) => {
     const user = new User(req.body)
     try {
         await user.save()
+        
+        // Log successful user creation (without sensitive data)
+        logAuthInfo('New user created', { 
+            userId: user.userId ? user.userId.toString() : user._id.toString(),
+            numericUserId: user.userId,
+            email: user.email 
+        });
+        
         sendWelcomeEmail(user.email, user.name)
         const token = await user.generateAuthToken()
-        res.status(201).send({user, token})
+        
+        // Set authentication cookie instead of returning token in response
+        setAuthCookie(res, token)
+        
+        // Return only user information, no token
+        res.status(201).send({user})
     } catch(e) {
+        // Log signup failure (without sensitive data)
+        logAuthError('User signup failed', { 
+            error: e.message,
+            email: req.body?.email 
+        });
+        
+        // Ensure no cookie is set on failure
         res.status(400).send(e)
     }
 })
@@ -22,8 +44,34 @@ router.post("/users/login", async (req, res) => {
     try {
         const user = await User.findByCredentials(req.body.email, req.body.password)
         const token = await user.generateAuthToken()
-        res.send({user, token})
+        
+        // Log successful login
+        logAuthInfo('User login successful', { 
+            userId: user.userId ? user.userId.toString() : user._id.toString(),
+            numericUserId: user.userId,
+            email: user.email 
+        });
+        
+        // Set authentication cookie instead of returning token in response
+        setAuthCookie(res, token)
+        
+        // Return only user information, no token
+        res.send({user})
     } catch (e) {
+        // Log login failure
+        logAuthError('User login failed', { 
+            error: e.message,
+            email: req.body?.email 
+        });
+        
+        // Log potential security event for failed login attempts
+        logSecurityEvent('Failed login attempt', { 
+            email: req.body?.email,
+            ip: req.ip || req.connection?.remoteAddress,
+            userAgent: req.get('User-Agent')
+        });
+        
+        // Ensure no cookie is set on failure
         res.status(400).send()
     }
 })
@@ -34,18 +82,54 @@ router.post("/users/logout", auth, async(req, res) => {
             return token.token !== req.token
         })
         await req.user.save()
+        
+        // Log successful logout
+        logAuthInfo('User logout successful', { 
+            userId: req.user.userId ? req.user.userId.toString() : req.user._id.toString(),
+            numericUserId: req.user.userId
+        });
+        
+        // Clear authentication cookie
+        clearAuthCookie(res)
+        
         res.status(201).send(req.user)
     } catch(e) {
+        // Log logout error
+        logAuthError('User logout failed', { 
+            error: e.message,
+            userId: req.user?.userId ? req.user.userId.toString() : req.user?._id?.toString(),
+            numericUserId: req.user?.userId
+        });
+        
         res.status(500).send({error: "something went wrong"})
     }
 })
 
 router.post("/users/logoutall", auth, async(req, res) => {
     try {
+        const tokenCount = req.user.tokens.length;
         req.user.tokens = []
         await req.user.save()
+        
+        // Log successful logout from all devices
+        logAuthInfo('User logout from all devices successful', { 
+            userId: req.user.userId ? req.user.userId.toString() : req.user._id.toString(),
+            numericUserId: req.user.userId,
+            tokensCleared: tokenCount 
+        });
+        
+        // Clear authentication cookie
+        clearAuthCookie(res)
+        
         res.status(201).send(req.user)
     } catch(e) {
+        // Log logout all error
+        logAuthError('User logout from all devices failed', { 
+            error: e.message,
+            userId: req.user?.userId ? req.user.userId.toString() : req.user?._id?.toString(),
+            numericUserId: req.user?.userId
+        });
+        
         res.status(500).send({error: "something went wrong"})
     }
 })
@@ -79,7 +163,20 @@ router.delete("/users/me/avatar", auth, async (req, res) => {
 
 router.get("/users/:id/avatar", async (req, res) => {
     try {
-        const user = await User.findById(req.params.id)
+        // Try to find by numeric userId first, then fallback to ObjectId
+        let user;
+        const id = req.params.id;
+        
+        if (!isNaN(id)) {
+            // If id is numeric, search by userId
+            user = await User.findOne({ userId: parseInt(id) });
+        }
+        
+        if (!user) {
+            // Fallback to ObjectId search for backward compatibility
+            user = await User.findById(id);
+        }
+        
         if(!user || !user.avatar) {
             throw new Error()
         }
@@ -122,8 +219,8 @@ router.patch("/users/me", auth, async (req, res) => {
 
 router.delete("/users/me", auth, async (req, res) => {
     try {
-        console.log(req.user)
-        const user = await User.deleteOne({ _id: req.user._id })
+        // Use the document's deleteOne method to trigger middleware
+        await req.user.deleteOne();
         sendAccountDeletionEmail(req.user.email, req.user.name)
         res.send(req.user); 
     } catch(e) {
