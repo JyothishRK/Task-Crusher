@@ -1,11 +1,17 @@
-const sgMail = require('@sendgrid/mail')
+const { Resend } = require('resend');
 
-sgMail.setApiKey(process.env.SENDGRID_API_KEY)
+let resend = null;
 
-const sendWelcomeEmail = (email, name) => {
-    const msg = {
-        to: email,
-        from: 'gamer1599818@gmail.com',
+if (!process.env.RESEND_API_KEY) {
+    console.error('Error: RESEND_API_KEY environment variable is not set');
+} else {
+    resend = new Resend(process.env.RESEND_API_KEY);
+}
+
+const sendWelcomeEmail = async (email, name) => {
+    const emailData = {
+        from: 'Task Crusher <onboarding@resend.dev>',
+        to: [email],
         subject: 'Welcome to Task Crusher! 🚀',
         text: `Hi ${name},\n\nWelcome to Task Crusher! We're thrilled to have you on board. Task Crusher is here to help you track your tasks, stay organized, and crush your goals with ease.\n\nGet started by logging in and exploring your dashboard. If you have any questions, feel free to reach out.\n\nHere's to smashing those tasks!\n\nCheers,\nThe Task Crusher Team`,
         html: `
@@ -16,19 +22,22 @@ const sendWelcomeEmail = (email, name) => {
             <p>Cheers,<br>The Task Crusher Team</p>
         `,
     };
-    sgMail.send(msg)
-        .then(() => {
-            console.log('Welcome email sent to:', email);
-        })
-        .catch((error) => {
-            console.error('Error sending email:', error);
-        });
+    
+    try {
+        if (!resend) {
+            throw new Error('Email service not initialized - RESEND_API_KEY is missing');
+        }
+        await resend.emails.send(emailData);
+        console.log('Welcome email sent to:', email);
+    } catch (error) {
+        console.error('Error sending email:', error);
+    }
 };
 
-const sendAccountDeletionEmail = (email, name) => {
-    const msg = {
-        to: email,
-        from: 'gamer1599818@gmail.com',
+const sendAccountDeletionEmail = async (email, name) => {
+    const emailData = {
+        from: 'Task Crusher <onboarding@resend.dev>',
+        to: [email],
         subject: 'Your Task Crusher Account Has Been Deleted',
         text: `Hi ${name},\n\nWe're writing to confirm that your Task Crusher account has been successfully deleted. We're sorry to see you go, but we respect your decision.\n\nIf this was a mistake or you'd like to rejoin in the future, we'd be happy to welcome you back. Your productivity journey is always welcome here!\n\nThank you for giving Task Crusher a try. Wishing you all the best!\n\nCheers,\nThe Task Crusher Team`,
         html: `
@@ -39,13 +48,16 @@ const sendAccountDeletionEmail = (email, name) => {
             <p>Cheers,<br>The Task Crusher Team</p>
         `,
     };
-    sgMail.send(msg)
-        .then(() => {
-            console.log('Account deletion email sent to:', email);
-        })
-        .catch((error) => {
-            console.error('Error sending email:', error);
-        });
+    
+    try {
+        if (!resend) {
+            throw new Error('Email service not initialized - RESEND_API_KEY is missing');
+        }
+        await resend.emails.send(emailData);
+        console.log('Account deletion email sent to:', email);
+    } catch (error) {
+        console.error('Error sending email:', error);
+    }
 };
 
 
