@@ -48,6 +48,7 @@ const TaskDetail = () => {
   });
   const [subtasks, setSubtasks] = useState([]);
   const [subtaskLoading, setSubtaskLoading] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
     fetchTaskDetails();
@@ -89,18 +90,22 @@ const TaskDetail = () => {
   };
 
   const handleDelete = async () => {
-    if (window.confirm('Are you sure you want to delete this task?')) {
-      try {
-        const response = await apiCall(`/api/tasks/${taskId}`, {
-          method: 'DELETE'
-        });
+    setShowDeleteConfirm(true);
+  };
 
-        if (response.ok) {
-          navigate('/dashboard');
-        }
-      } catch (error) {
-        console.error('Error deleting task:', error);
+  const confirmDelete = async () => {
+    try {
+      const response = await apiCall(`/api/tasks/${taskId}`, {
+        method: 'DELETE'
+      });
+
+      if (response.ok) {
+        navigate('/dashboard');
       }
+    } catch (error) {
+      console.error('Error deleting task:', error);
+    } finally {
+      setShowDeleteConfirm(false);
     }
   };
 
@@ -167,11 +172,14 @@ const TaskDetail = () => {
   const fetchSubtasks = async () => {
     try {
       setSubtaskLoading(true);
-      const response = await apiCall(`/api/tasks/${taskId}/subtasks`);
-      
-      if (response.ok) {
-        const subtasksData = await response.json();
-        setSubtasks(subtasksData);
+      // Use the numeric taskId from the task object for the subtasks endpoint
+      if (task && task.taskId) {
+        const response = await apiCall(`/api/tasks/${task.taskId}/subtasks`);
+        
+        if (response.ok) {
+          const subtasksData = await response.json();
+          setSubtasks(subtasksData);
+        }
       }
     } catch (error) {
       console.error('Error fetching subtasks:', error);
@@ -187,7 +195,7 @@ const TaskDetail = () => {
         method: 'POST',
         body: JSON.stringify({
           ...subtaskForm,
-          parentId: task.taskId
+          parentId: task.taskId // This should already be correct
         })
       });
 
@@ -305,61 +313,65 @@ const TaskDetail = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-4xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <button
-              onClick={() => navigate('/dashboard')}
-              className="flex items-center text-gray-600 hover:text-gray-900 transition-colors"
-            >
-              <ArrowLeft className="h-5 w-5 mr-2" />
-              Back to Dashboard
-            </button>
-            
-            <div className="flex items-center space-x-3">
-              <button
-                onClick={handleComplete}
-                className={`flex items-center px-4 py-2 rounded-lg transition-colors ${
-                  task.isCompleted 
-                    ? 'bg-green-100 text-green-700 hover:bg-green-200' 
-                    : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
-                }`}
-              >
-                {task.isCompleted ? (
-                  <>
-                    <CheckCircle className="h-5 w-5 mr-2" />
-                    Completed
-                  </>
-                ) : (
-                  <>
-                    <Circle className="h-5 w-5 mr-2" />
-                    Mark Complete
-                  </>
-                )}
-              </button>
-              
-              {!task.isCompleted && (
-                <button
-                  onClick={openEditModal}
-                  className="flex items-center px-4 py-2 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors"
-                >
-                  <Edit className="h-5 w-5 mr-2" />
-                  Edit
-                </button>
-              )}
-              
-              <button
-                onClick={handleDelete}
-                className="flex items-center px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors"
-              >
-                <Trash2 className="h-5 w-5 mr-2" />
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+             {/* Header */}
+       <div className="bg-white border-b border-gray-200">
+         <div className="max-w-4xl mx-auto px-4 py-4">
+           <div className="flex items-center">
+             <button
+               onClick={() => navigate('/dashboard')}
+               className="flex items-center text-gray-600 hover:text-gray-900 transition-colors"
+             >
+               <ArrowLeft className="h-5 w-5" />
+             </button>
+           </div>
+         </div>
+       </div>
+
+       {/* Action Buttons */}
+       <div className="bg-white border-b border-gray-200">
+         <div className="max-w-4xl mx-auto px-4 py-4">
+           <div className="flex flex-row gap-3">
+             <button
+               onClick={handleComplete}
+               className={`flex items-center justify-center flex-1 px-4 py-3 rounded-lg transition-colors text-base font-medium ${
+                 task.isCompleted 
+                   ? 'bg-green-100 text-green-700 hover:bg-green-200' 
+                   : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+               }`}
+             >
+               {task.isCompleted ? (
+                 <>
+                   <CheckCircle className="h-5 w-5 mr-2" />
+                   Completed
+                 </>
+               ) : (
+                 <>
+                   <Circle className="h-5 w-5 mr-2" />
+                   Complete
+                 </>
+               )}
+             </button>
+             
+             {!task.isCompleted && (
+               <button
+                 onClick={openEditModal}
+                 className="flex items-center justify-center flex-1 px-4 py-3 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors text-base font-medium"
+               >
+                 <Edit className="h-5 w-5 mr-2" />
+                 Edit
+               </button>
+             )}
+             
+             <button
+               onClick={handleDelete}
+               className="flex items-center justify-center flex-1 px-4 py-3 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors text-base font-medium"
+             >
+               <Trash2 className="h-5 w-5 mr-2" />
+               Delete
+             </button>
+           </div>
+         </div>
+       </div>
 
       {/* Task Content */}
       <div className="max-w-4xl mx-auto px-4 py-8">
@@ -410,51 +422,14 @@ const TaskDetail = () => {
             </div>
           </div>
 
-          {/* Task Details */}
-          <div className="p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Task Details</h3>
-            
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <h4 className="font-medium text-gray-700 mb-2">Status</h4>
-                  <div className="flex items-center">
-                    {task.isCompleted ? (
-                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
-                        <CheckCircle className="h-4 w-4 mr-2" />
-                        Completed
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">
-                        <Circle className="h-4 w-4 mr-2" />
-                        Pending
-                      </span>
-                    )}
-                  </div>
-                </div>
-                
-                <div>
-                  <h4 className="font-medium text-gray-700 mb-2">Priority</h4>
-                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getPriorityColor(task.priority)}`}>
-                    {getPriorityText(task.priority)}
-                  </span>
-                </div>
-              </div>
-              
-              {task.description && (
-                <div>
-                  <h4 className="font-medium text-gray-700 mb-2">Description</h4>
-                  <p className="text-gray-600 bg-gray-50 p-4 rounded-lg">
-                    {task.description}
-                  </p>
-                </div>
-              )}
-
-              {/* Display Links */}
+          {/* Links and Additional Notes - Only show if they exist */}
+          {(task.links && task.links.length > 0) || task.additionalNotes ? (
+            <div className="p-6 pt-0 space-y-4">
+              {/* Links Section */}
               {task.links && task.links.length > 0 && (
                 <div>
                   <h4 className="font-medium text-gray-700 mb-2">Related Links</h4>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-col sm:flex-row flex-wrap gap-2">
                     {task.links.map((link, index) => (
                       <a
                         key={index}
@@ -471,52 +446,20 @@ const TaskDetail = () => {
                 </div>
               )}
 
-              {/* Display Additional Notes */}
+              {/* Additional Notes Section */}
               {task.additionalNotes && (
                 <div>
                   <h4 className="font-medium text-gray-700 mb-2">Additional Notes</h4>
-                  <div className="bg-gray-50 p-4 rounded-lg">
+                  <div className="bg-gray-50 p-3 sm:p-4 rounded-lg">
                     <div className="flex items-start">
                       <FileText className="h-4 w-4 text-gray-400 mr-2 mt-0.5 flex-shrink-0" />
-                      <p className="text-gray-600">{task.additionalNotes}</p>
+                      <p className="text-gray-600 text-sm sm:text-base">{task.additionalNotes}</p>
                     </div>
                   </div>
                 </div>
               )}
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <h4 className="font-medium text-gray-700 mb-2">Due Date</h4>
-                  <p className={`text-lg ${getDueDateColor(task.dueDate, task.isCompleted)}`}>
-                    {getDueDateText(task.dueDate)}
-                  </p>
-                </div>
-                
-                {task.category && (
-                  <div>
-                    <h4 className="font-medium text-gray-700 mb-2">Category</h4>
-                    <p className="text-gray-600">{task.category}</p>
-                  </div>
-                )}
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <h4 className="font-medium text-gray-700 mb-2">Created</h4>
-                  <p className="text-gray-600">
-                    {format(new Date(task.createdAt), 'EEEE, MMMM d, yyyy')}
-                  </p>
-                </div>
-                
-                <div>
-                  <h4 className="font-medium text-gray-700 mb-2">Last Updated</h4>
-                  <p className="text-gray-600">
-                    {format(new Date(task.updatedAt), 'EEEE, MMMM d, yyyy')}
-                  </p>
-                </div>
-              </div>
             </div>
-          </div>
+          ) : null}
         </div>
 
         {/* Subtasks Section */}
@@ -1027,9 +970,38 @@ const TaskDetail = () => {
             </div>
           </div>
         </div>
-      )}
-    </div>
-  );
-};
+             )}
+
+       {/* Delete Confirmation Modal */}
+       {showDeleteConfirm && (
+         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-50 p-4">
+           <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
+             <div className="p-6">
+               <h3 className="text-lg font-medium text-gray-900 mb-4">Delete Task</h3>
+               <p className="text-gray-600 mb-6">
+                 Are you sure you want to delete "{task?.title}"? This action cannot be undone.
+               </p>
+               <div className="flex space-x-3">
+                 <button
+                   onClick={() => setShowDeleteConfirm(false)}
+                   className="btn-secondary flex-1"
+                 >
+                   Cancel
+                 </button>
+                 <button
+                   onClick={confirmDelete}
+                   className="btn-primary flex-1 bg-red-600 hover:bg-red-700"
+                 >
+                   Delete Task
+                 </button>
+               </div>
+             </div>
+           </div>
+         </div>
+       )}
+     </div>
+   );
+ };
 
 export default TaskDetail;
+
