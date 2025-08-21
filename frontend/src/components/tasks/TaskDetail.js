@@ -90,35 +90,18 @@ const TaskDetail = () => {
   };
 
   const handleDelete = async () => {
-    setShowDeleteConfirm(true);
-  };
+    if (window.confirm('Are you sure you want to delete this task?')) {
+      try {
+        const response = await apiCall(`/api/tasks/${taskId}`, {
+          method: 'DELETE'
+        });
 
-  const confirmDelete = async () => {
-    try {
-      // Make the API call directly to avoid the apiCall wrapper throwing errors
-      const API_BASE_URL = 'https://task-crusher.onrender.com';
-      const url = `${API_BASE_URL}/api/tasks/${taskId}`;
-      
-      const response = await fetch(url, {
-        method: 'DELETE',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json'
+        if (response.ok) {
+          navigate('/dashboard');
         }
-      });
-      
-      if (response.ok) {
-        navigate('/dashboard');
-      } else {
-        const errorData = await response.json().catch(() => ({}));
-        
-        // Show user-friendly error message
-        alert(`Failed to delete task: ${errorData.error || 'Unknown error'}`);
+      } catch (error) {
+        console.error('Error deleting task:', error);
       }
-    } catch (error) {
-      alert('Failed to delete task. Please try again.');
-    } finally {
-      setShowDeleteConfirm(false);
     }
   };
 
@@ -185,14 +168,11 @@ const TaskDetail = () => {
   const fetchSubtasks = async () => {
     try {
       setSubtaskLoading(true);
-      // Use the numeric taskId from the task object for the subtasks endpoint
-      if (task && task.taskId) {
-        const response = await apiCall(`/api/tasks/${task.taskId}/subtasks`);
-        
-        if (response.ok) {
-          const subtasksData = await response.json();
-          setSubtasks(subtasksData);
-        }
+      const response = await apiCall(`/api/tasks/${taskId}/subtasks`);
+      
+      if (response.ok) {
+        const subtasksData = await response.json();
+        setSubtasks(subtasksData);
       }
     } catch (error) {
       console.error('Error fetching subtasks:', error);
@@ -329,105 +309,101 @@ const TaskDetail = () => {
       {/* Header */}
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-4xl mx-auto px-4 py-4">
-          <div className="flex items-center">
+          <div className="flex items-center justify-between">
             <button
               onClick={() => navigate('/dashboard')}
               className="flex items-center text-gray-600 hover:text-gray-900 transition-colors"
             >
-              <ArrowLeft className="h-5 w-5" />
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Action Buttons */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-4xl mx-auto px-4 py-4">
-          <div className="flex flex-row gap-3">
-            <button
-              onClick={handleComplete}
-              className={`flex items-center justify-center flex-1 px-4 py-3 rounded-lg transition-colors text-base font-medium ${
-                task.isCompleted 
-                  ? 'bg-green-100 text-green-700 hover:bg-green-200' 
-                  : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
-              }`}
-            >
-              {task.isCompleted ? (
-                <>
-                  <CheckCircle className="h-5 w-5 mr-2" />
-                  Completed
-                </>
-              ) : (
-                <>
-                  <Circle className="h-5 w-5 mr-2" />
-                  Complete
-                </>
-              )}
+              <ArrowLeft className="h-5 w-5 mr-2" />
+              Back to Dashboard
             </button>
             
-            {!task.isCompleted && (
+            <div className="flex items-center space-x-3">
               <button
-                onClick={openEditModal}
-                className="flex items-center justify-center flex-1 px-4 py-3 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors text-base font-medium"
+                onClick={handleComplete}
+                className={`flex items-center px-4 py-2 rounded-lg transition-colors ${
+                  task.isCompleted 
+                    ? 'bg-green-100 text-green-700 hover:bg-green-200' 
+                    : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                }`}
               >
-                <Edit className="h-5 w-5 mr-2" />
-                Edit
+                {task.isCompleted ? (
+                  <>
+                    <CheckCircle className="h-5 w-5 mr-2" />
+                    Completed
+                  </>
+                ) : (
+                  <>
+                    <Circle className="h-5 w-5 mr-2" />
+                    Mark Complete
+                  </>
+                )}
               </button>
-            )}
-            
-            <button
-              onClick={handleDelete}
-              className="flex items-center justify-center flex-1 px-4 py-3 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors text-base font-medium"
-            >
-              <Trash2 className="h-5 w-5 mr-2" />
-              Delete
-            </button>
+              
+              {!task.isCompleted && (
+                <button
+                  onClick={openEditModal}
+                  className="flex items-center px-4 py-2 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors"
+                >
+                  <Edit className="h-5 w-5 mr-2" />
+                  Edit
+                </button>
+              )}
+              
+              <button
+                onClick={handleDelete}
+                className="flex items-center px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors"
+              >
+                <Trash2 className="h-5 w-5 mr-2" />
+                Delete
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Task Content */}
-      <div className="max-w-4xl mx-auto px-4 py-6 sm:py-8">
+      <div className="max-w-4xl mx-auto px-4 py-8">
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
           {/* Task Header */}
-          <div className="p-4 sm:p-6 border-b border-gray-200">
-            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-4 space-y-3 sm:space-y-0">
+          <div className="p-6 border-b border-gray-200">
+            <div className="flex items-start justify-between mb-4">
               <div className="flex-1">
-                <h1 className={`text-2xl sm:text-3xl font-bold text-gray-900 mb-2 ${
+                <h1 className={`text-3xl font-bold text-gray-900 mb-2 ${
                   task.isCompleted ? 'line-through text-gray-500' : ''
                 }`}>
                   {task.title}
                 </h1>
                 {task.description && (
-                  <p className={`text-base sm:text-lg text-gray-600 ${task.isCompleted ? 'line-through text-gray-400' : ''}`}>
+                  <p className={`text-lg text-gray-600 ${task.isCompleted ? 'line-through text-gray-400' : ''}`}>
                     {task.description}
                   </p>
                 )}
               </div>
               
-              <span className={`px-3 py-1 text-sm font-medium rounded-full ${getPriorityColor(task.priority)} self-start`}>
+              <span className={`px-3 py-1 text-sm font-medium rounded-full ${getPriorityColor(task.priority)}`}>
                 {getPriorityText(task.priority)} Priority
               </span>
             </div>
 
             {/* Task Meta */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-              <div className="flex items-center text-gray-600 text-sm sm:text-base">
-                <Calendar className="h-4 w-4 sm:h-5 sm:w-5 mr-2 flex-shrink-0" />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="flex items-center text-gray-600">
+                <Calendar className="h-5 w-5 mr-2" />
                 <span className={getDueDateColor(task.dueDate, task.isCompleted)}>
                   {getDueDateText(task.dueDate)}
                 </span>
               </div>
               
               {task.category && (
-                <div className="flex items-center text-gray-600 text-sm sm:text-base">
-                  <Tag className="h-4 w-4 sm:h-5 sm:w-5 mr-2 flex-shrink-0" />
+                <div className="flex items-center text-gray-600">
+                  <Tag className="h-5 w-5 mr-2" />
                   <span>{task.category}</span>
                 </div>
               )}
               
-              <div className="flex items-center text-gray-600 text-sm sm:text-base">
-                <Clock className="h-4 w-4 sm:h-5 sm:w-5 mr-2 flex-shrink-0" />
+              <div className="flex items-center text-gray-600">
+                <Clock className="h-5 w-5 mr-2" />
                 <span>
                   Created {format(new Date(task.createdAt), 'MMM d, yyyy')}
                 </span>
@@ -435,14 +411,51 @@ const TaskDetail = () => {
             </div>
           </div>
 
-          {/* Links and Additional Notes - Only show if they exist */}
-          {(task.links && task.links.length > 0) || task.additionalNotes ? (
-            <div className="p-4 sm:p-6 pt-0 space-y-4">
-              {/* Links Section */}
+          {/* Task Details */}
+          <div className="p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Task Details</h3>
+            
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <h4 className="font-medium text-gray-700 mb-2">Status</h4>
+                  <div className="flex items-center">
+                    {task.isCompleted ? (
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                        <CheckCircle className="h-4 w-4 mr-2" />
+                        Completed
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">
+                        <Circle className="h-4 w-4 mr-2" />
+                        Pending
+                      </span>
+                    )}
+                  </div>
+                </div>
+                
+                <div>
+                  <h4 className="font-medium text-gray-700 mb-2">Priority</h4>
+                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getPriorityColor(task.priority)}`}>
+                    {getPriorityText(task.priority)}
+                  </span>
+                </div>
+              </div>
+              
+              {task.description && (
+                <div>
+                  <h4 className="font-medium text-gray-700 mb-2">Description</h4>
+                  <p className="text-gray-600 bg-gray-50 p-4 rounded-lg">
+                    {task.description}
+                  </p>
+                </div>
+              )}
+
+              {/* Display Links */}
               {task.links && task.links.length > 0 && (
                 <div>
                   <h4 className="font-medium text-gray-700 mb-2">Related Links</h4>
-                  <div className="flex flex-col sm:flex-row flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-2">
                     {task.links.map((link, index) => (
                       <a
                         key={index}
@@ -459,26 +472,58 @@ const TaskDetail = () => {
                 </div>
               )}
 
-              {/* Additional Notes Section */}
+              {/* Display Additional Notes */}
               {task.additionalNotes && (
                 <div>
                   <h4 className="font-medium text-gray-700 mb-2">Additional Notes</h4>
-                  <div className="bg-gray-50 p-3 sm:p-4 rounded-lg">
+                  <div className="bg-gray-50 p-4 rounded-lg">
                     <div className="flex items-start">
                       <FileText className="h-4 w-4 text-gray-400 mr-2 mt-0.5 flex-shrink-0" />
-                      <p className="text-gray-600 text-sm sm:text-base">{task.additionalNotes}</p>
+                      <p className="text-gray-600">{task.additionalNotes}</p>
                     </div>
                   </div>
                 </div>
               )}
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <h4 className="font-medium text-gray-700 mb-2">Due Date</h4>
+                  <p className={`text-lg ${getDueDateColor(task.dueDate, task.isCompleted)}`}>
+                    {getDueDateText(task.dueDate)}
+                  </p>
+                </div>
+                
+                {task.category && (
+                  <div>
+                    <h4 className="font-medium text-gray-700 mb-2">Category</h4>
+                    <p className="text-gray-600">{task.category}</p>
+                  </div>
+                )}
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <h4 className="font-medium text-gray-700 mb-2">Created</h4>
+                  <p className="text-gray-600">
+                    {format(new Date(task.createdAt), 'EEEE, MMMM d, yyyy')}
+                  </p>
+                </div>
+                
+                <div>
+                  <h4 className="font-medium text-gray-700 mb-2">Last Updated</h4>
+                  <p className="text-gray-600">
+                    {format(new Date(task.updatedAt), 'EEEE, MMMM d, yyyy')}
+                  </p>
+                </div>
+              </div>
             </div>
-          ) : null}
+          </div>
         </div>
 
         {/* Subtasks Section */}
-        <div className="mt-6 sm:mt-8 bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-          <div className="px-4 sm:px-6 py-4 border-b border-gray-200">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
+        <div className="mt-8 bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold text-gray-900 flex items-center">
                 <List className="h-5 w-5 mr-2" />
                 Subtasks ({subtasks.length})
@@ -500,7 +545,7 @@ const TaskDetail = () => {
                     });
                     setShowSubtaskForm(true);
                   }}
-                  className="btn-primary flex items-center justify-center self-start sm:self-auto w-full sm:w-auto"
+                  className="btn-primary flex items-center"
                 >
                   <Plus className="h-4 w-4 mr-2" />
                   Add Subtask
@@ -509,7 +554,7 @@ const TaskDetail = () => {
             </div>
           </div>
           
-          <div className="p-4 sm:p-6">
+          <div className="p-6">
             {subtaskLoading ? (
               <div className="flex items-center justify-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
@@ -527,7 +572,7 @@ const TaskDetail = () => {
                 {subtasks.map((subtask) => (
                   <div
                     key={subtask._id}
-                    className={`flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 rounded-lg border space-y-2 sm:space-y-0 ${
+                    className={`flex items-center justify-between p-4 rounded-lg border ${
                       subtask.isCompleted 
                         ? 'bg-green-50 border-green-200' 
                         : 'bg-gray-50 border-gray-200'
@@ -547,13 +592,13 @@ const TaskDetail = () => {
                       </button>
                       
                       <div className="flex-1">
-                        <h4 className={`font-medium text-gray-900 text-sm sm:text-base ${
+                        <h4 className={`font-medium text-gray-900 ${
                           subtask.isCompleted ? 'line-through text-gray-500' : ''
                         }`}>
                           {subtask.title}
                         </h4>
                         {subtask.description && (
-                          <p className={`text-xs sm:text-sm text-gray-600 ${
+                          <p className={`text-sm text-gray-600 ${
                             subtask.isCompleted ? 'line-through text-gray-400' : ''
                           }`}>
                             {subtask.description}
@@ -562,7 +607,7 @@ const TaskDetail = () => {
                       </div>
                     </div>
                     
-                    <div className="flex items-center justify-between sm:justify-end space-x-2 sm:ml-4">
+                    <div className="flex items-center space-x-2 ml-4">
                       <span className={`px-2 py-1 text-xs font-medium rounded-full ${getPriorityColor(subtask.priority)}`}>
                         {getPriorityText(subtask.priority)}
                       </span>
@@ -573,7 +618,7 @@ const TaskDetail = () => {
                           className="text-gray-400 hover:text-red-600 p-1 rounded hover:bg-red-50 transition-colors"
                           title="Delete subtask"
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <Trash2 className="h-4 w-4 mr-2" />
                         </button>
                       )}
                     </div>
@@ -587,10 +632,10 @@ const TaskDetail = () => {
 
       {/* Edit Task Modal */}
       {showEditModal && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
             {/* Modal Header */}
-            <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
               <h3 className="text-lg font-medium text-gray-900">Edit Task</h3>
               <button
                 onClick={() => setShowEditModal(false)}
@@ -601,7 +646,7 @@ const TaskDetail = () => {
             </div>
 
             {/* Modal Body */}
-            <div className="p-4 sm:p-6">
+            <div className="p-6">
               <form onSubmit={handleEditSubmit} className="space-y-4">
                 {/* Title */}
                 <div>
@@ -653,7 +698,7 @@ const TaskDetail = () => {
                 </div>
 
                 {/* Priority and Category Row */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Priority */}
                   <div>
                     <label htmlFor="edit-priority" className="block text-sm font-medium text-gray-700 mb-1">
@@ -691,7 +736,7 @@ const TaskDetail = () => {
 
                 {/* Links Section */}
                 <div>
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2 space-y-2 sm:space-y-0">
+                  <div className="flex items-center justify-between mb-2">
                     <label className="block text-sm font-medium text-gray-700">
                       <Link className="inline h-4 w-4 mr-2" />
                       Related Links
@@ -699,7 +744,7 @@ const TaskDetail = () => {
                     <button
                       type="button"
                       onClick={addLink}
-                      className="inline-flex items-center px-2 py-1 text-sm bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors self-start sm:self-auto"
+                      className="inline-flex items-center px-2 py-1 text-sm bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors"
                     >
                       Add Link
                     </button>
@@ -710,7 +755,7 @@ const TaskDetail = () => {
                   )}
                   
                   {editFormData.links.map((link, index) => (
-                    <div key={index} className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 mb-2">
+                    <div key={index} className="flex space-x-2 mb-2">
                       <input
                         type="text"
                         placeholder="Link label (optional)"
@@ -729,7 +774,7 @@ const TaskDetail = () => {
                       <button
                         type="button"
                         onClick={() => removeLink(index)}
-                        className="px-2 py-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors self-start sm:self-auto"
+                        className="px-2 py-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>
@@ -755,17 +800,17 @@ const TaskDetail = () => {
                 </div>
 
                 {/* Submit Button */}
-                <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3 pt-4">
+                <div className="flex space-x-3 pt-4">
                   <button
                     type="button"
                     onClick={() => setShowEditModal(false)}
-                    className="btn-secondary flex-1 w-full sm:w-auto"
+                    className="btn-secondary flex-1"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="btn-primary flex-1 w-full sm:w-auto"
+                    className="btn-primary flex-1"
                   >
                     Update Task
                   </button>
@@ -778,10 +823,10 @@ const TaskDetail = () => {
 
       {/* Add Subtask Modal */}
       {showSubtaskForm && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
             {/* Modal Header */}
-            <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
               <h3 className="text-lg font-medium text-gray-900">Add Subtask</h3>
               <button
                 onClick={() => setShowSubtaskForm(false)}
@@ -792,7 +837,7 @@ const TaskDetail = () => {
             </div>
 
             {/* Modal Body */}
-            <div className="p-4 sm:p-6">
+            <div className="p-6">
               <form onSubmit={handleSubtaskSubmit} className="space-y-4">
                 {/* Title */}
                 <div>
@@ -844,7 +889,7 @@ const TaskDetail = () => {
                 </div>
 
                 {/* Priority and Category Row */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Priority */}
                   <div>
                     <label htmlFor="subtask-priority" className="block text-sm font-medium text-gray-700 mb-1">
@@ -901,14 +946,14 @@ const TaskDetail = () => {
 
                 {/* Links Section */}
                 <div>
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2 space-y-2 sm:space-y-0">
+                  <div className="flex items-center justify-between mb-2">
                     <label className="block text-sm font-medium text-gray-700">
                       Related Links
                     </label>
                     <button
                       type="button"
                       onClick={() => setSubtaskForm(prev => ({...prev, links: [...prev.links, '']}))}
-                      className="inline-flex items-center px-2 py-1 text-sm bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors self-start sm:self-auto"
+                      className="inline-flex items-center px-2 py-1 text-sm bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors"
                     >
                       <Plus className="h-3 w-3 mr-1" />
                       Add Link
@@ -920,7 +965,7 @@ const TaskDetail = () => {
                   )}
                   
                   {subtaskForm.links.map((link, index) => (
-                    <div key={index} className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 mb-2">
+                    <div key={index} className="flex space-x-2 mb-2">
                       <input
                         type="url"
                         placeholder="https://example.com"
@@ -939,7 +984,7 @@ const TaskDetail = () => {
                           const newLinks = subtaskForm.links.filter((_, i) => i !== index);
                           setSubtaskForm({...subtaskForm, links: newLinks});
                         }}
-                        className="px-2 py-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors self-start sm:self-auto"
+                        className="px-2 py-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>
@@ -964,50 +1009,22 @@ const TaskDetail = () => {
                 </div>
 
                 {/* Submit Button */}
-                <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3 pt-4">
+                <div className="flex space-x-3 pt-4">
                   <button
                     type="button"
                     onClick={() => setShowSubtaskForm(false)}
-                    className="btn-secondary flex-1 w-full sm:w-auto"
+                    className="btn-secondary flex-1"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="btn-primary flex-1 w-full sm:w-auto"
+                    className="btn-primary flex-1"
                   >
                     Add Subtask
                   </button>
                 </div>
               </form>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Delete Confirmation Modal */}
-      {showDeleteConfirm && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
-            <div className="p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Delete Task</h3>
-              <p className="text-gray-600 mb-6">
-                Are you sure you want to delete "{task?.title}"? This action cannot be undone.
-              </p>
-              <div className="flex space-x-3">
-                <button
-                  onClick={() => setShowDeleteConfirm(false)}
-                  className="btn-secondary flex-1"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={confirmDelete}
-                  className="btn-primary flex-1 bg-red-600 hover:bg-red-700"
-                >
-                  Delete Task
-                </button>
-              </div>
             </div>
           </div>
         </div>
