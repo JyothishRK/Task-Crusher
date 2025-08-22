@@ -9,7 +9,6 @@ import {
   Users, 
   Star,
   Play,
-  Menu,
   X,
   Calendar,
   BarChart3,
@@ -18,7 +17,6 @@ import {
 } from 'lucide-react';
 
 const LandingPage = () => {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeFeature, setActiveFeature] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
   const [showDemo, setShowDemo] = useState(false);
@@ -139,57 +137,23 @@ const LandingPage = () => {
               <span className="text-xl font-bold text-gray-900">Sync'd</span>
             </div>
             
-            {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center space-x-8">
-              
-            </div>
-            
-            <div className="hidden md:flex items-center space-x-4">
+            {/* Navigation Buttons - Visible on both mobile and desktop */}
+            <div className="flex items-center space-x-3">
               <Link 
                 to="/signin" 
-                className="text-blue-600 hover:text-blue-700 font-medium transition-colors duration-200"
+                className="text-blue-600 hover:text-blue-700 font-medium transition-colors duration-200 text-sm sm:text-base"
               >
                 Sign In
               </Link>
               <Link 
                 to="/signup" 
-                className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl"
+                className="bg-blue-600 text-white px-4 sm:px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl text-sm sm:text-base"
               >
                 Get Started
               </Link>
             </div>
-
-            {/* Mobile menu button */}
-            <button
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="md:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors duration-200"
-            >
-              {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-            </button>
           </div>
         </div>
-
-        {/* Mobile Navigation */}
-        {isMenuOpen && (
-          <div className="md:hidden bg-white border-t border-blue-200">
-            <div className="px-4 py-4 space-y-4">
-              <div className="pt-4 border-t border-blue-200 space-y-3">
-                <Link 
-                  to="/signin" 
-                  className="block text-blue-600 hover:text-blue-700 font-medium transition-colors duration-200"
-                >
-                  Sign In
-                </Link>
-                <Link 
-                  to="/signup" 
-                  className="block bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors duration-200 text-center"
-                >
-                  Get Started
-                </Link>
-              </div>
-            </div>
-          </div>
-        )}
       </nav>
 
       {/* Hero Section */}
