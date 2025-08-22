@@ -29,7 +29,7 @@
   ],
   "start_url": ".",
   "display": "standalone",
-  "theme_color": "#9333ea",
+  "theme_color": "#f97316",
   "background_color": "#ffffff",
   "orientation": "portrait-primary",
   "categories": ["productivity", "business", "utilities"],
