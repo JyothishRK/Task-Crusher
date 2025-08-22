@@ -43,16 +43,16 @@ const SignIn = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-purple-light flex items-center justify-center px-4">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-pink-50 flex items-center justify-center px-4">
       <div className="max-w-md w-full">
         {/* Header */}
         <div className="text-center mb-8">
-          <Link to="/" className="inline-flex items-center text-primary-600 hover:text-primary-700 mb-4 text-sm font-medium">
+          <Link to="/" className="inline-flex items-center text-orange-600 hover:text-orange-700 mb-4 text-sm font-medium">
             <ArrowRight className="h-4 w-4 mr-1 rotate-180" />
             Back to Home
           </Link>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome Back</h1>
-          <p className="text-gray-600">Sign in to your Task Crusher account</p>
+          <p className="text-gray-600">Sign in to your Sync'd account</p>
         </div>
 
         {/* Sign In Form */}
@@ -117,7 +117,7 @@ const SignIn = () => {
             <button
               type="submit"
               disabled={loading}
-              className="btn-primary w-full py-3 text-base disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full py-3 text-base font-medium text-white bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-lg"
             >
               {loading ? 'Signing In...' : 'Sign In'}
             </button>
@@ -127,7 +127,7 @@ const SignIn = () => {
           <div className="mt-6 text-center">
             <p className="text-gray-600">
               Don't have an account?{' '}
-              <Link to="/signup" className="text-primary-600 hover:text-primary-700 font-medium">
+              <Link to="/signup" className="text-orange-600 hover:text-orange-700 font-medium">
                 Sign up here
               </Link>
             </p>
@@ -137,7 +137,7 @@ const SignIn = () => {
         {/* Footer */}
         <div className="text-center mt-8">
           <p className="text-sm text-gray-500">
-            © 2024 Task Crusher. All rights reserved.
+            © 2025 Sync'd. All rights reserved.
           </p>
         </div>
       </div>

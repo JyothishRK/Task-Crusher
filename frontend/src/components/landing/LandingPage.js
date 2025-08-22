@@ -9,15 +9,66 @@ import {
   Users, 
   Star,
   Play,
-  ChevronDown,
   Menu,
-  X
+  X,
+  Calendar,
+  BarChart3,
+  Clock,
+  CheckSquare
 } from 'lucide-react';
 
 const LandingPage = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeFeature, setActiveFeature] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
+  const [showDemo, setShowDemo] = useState(false);
+
+  // Add custom animations to the document
+  useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes slide-in-left {
+        from { transform: translateX(-50px); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+      }
+      @keyframes slide-in-up {
+        from { transform: translateY(30px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+      }
+      @keyframes slide-in-right {
+        from { transform: translateX(50px); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+      }
+      @keyframes fade-in-up {
+        from { transform: translateY(30px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+      }
+      @keyframes float-slow {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-10px); }
+      }
+      @keyframes float-medium {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-15px); }
+      }
+      @keyframes float-fast {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-8px); }
+      }
+      .animate-slide-in-left { animation: slide-in-left 0.8s ease-out; }
+      .animate-slide-in-up { animation: slide-in-up 0.8s ease-out; }
+      .animate-slide-in-right { animation: slide-in-right 0.8s ease-out; }
+      .animate-fade-in-up { animation: fade-in-up 1s ease-out; }
+      .animate-float-slow { animation: float-slow 3s ease-in-out infinite; }
+      .animate-float-medium { animation: float-medium 2.5s ease-in-out infinite; }
+      .animate-float-fast { animation: float-fast 2s ease-in-out infinite; }
+    `;
+    document.head.appendChild(style);
+    
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
 
   useEffect(() => {
     setIsVisible(true);
@@ -48,71 +99,61 @@ const LandingPage = () => {
     }
   ];
 
-  const stats = [
-    { number: "10K+", label: "Active Users" },
-    { number: "50K+", label: "Tasks Completed" },
-    { number: "95%", label: "Satisfaction Rate" },
-    { number: "24/7", label: "Support" }
-  ];
-
-  const testimonials = [
+  const demoFeatures = [
     {
-      name: "Sarah Johnson",
-      role: "Product Manager",
-      content: "Task Crusher transformed how I manage my daily workflow. The interface is intuitive and the analytics are game-changing!",
-      rating: 5,
-      avatar: "👩‍💼"
+      icon: <CheckSquare className="h-6 w-6" />,
+      title: "Task Creation",
+      description: "Create tasks with titles, descriptions, due dates, and priority levels"
     },
     {
-      name: "Mike Chen",
-      role: "Software Developer",
-      content: "Finally, a task manager that doesn't get in the way. Clean, fast, and actually helps me stay productive.",
-      rating: 5,
-      avatar: "👨‍💻"
+      icon: <Calendar className="h-6 w-6" />,
+      title: "Calendar View",
+      description: "Visualize your tasks in daily, weekly, and monthly calendar layouts"
     },
     {
-      name: "Emily Rodriguez",
-      role: "Marketing Director",
-      content: "The team collaboration features are incredible. We've increased our project completion rate by 40%!",
-      rating: 5,
-      avatar: "👩‍🎨"
+      icon: <BarChart3 className="h-6 w-6" />,
+      title: "Progress Analytics",
+      description: "Track completion rates, productivity trends, and time management insights"
+    },
+    {
+      icon: <Clock className="h-6 w-6" />,
+      title: "Time Tracking",
+      description: "Monitor time spent on tasks and optimize your workflow efficiency"
     }
   ];
 
-  const scrollToFeatures = () => {
-    document.getElementById('features').scrollIntoView({ behavior: 'smooth' });
-  };
+
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-purple-50">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-pink-50">
       {/* Navigation */}
-      <nav className="fixed top-0 w-full bg-white/80 backdrop-blur-md border-b border-primary-100 z-50 transition-all duration-300">
+      <nav className="fixed top-0 w-full bg-white/80 backdrop-blur-md border-b border-orange-200 z-50 transition-all duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-r from-primary-600 to-primary-700 rounded-lg flex items-center justify-center">
-                <Target className="h-5 w-5 text-white" />
+              <div className="w-8 h-8 bg-gradient-to-r from-orange-500 to-pink-500 rounded-lg flex items-center justify-center">
+                <svg className="h-5 w-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97-.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/>
+                </svg>
               </div>
-              <span className="text-xl font-bold text-gray-900">Task Crusher</span>
+              <span className="text-xl font-bold text-gray-900">Sync'd</span>
             </div>
             
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-8">
-              <a href="#features" className="text-gray-600 hover:text-primary-600 transition-colors duration-200">Features</a>
-              <a href="#testimonials" className="text-gray-600 hover:text-primary-600 transition-colors duration-200">Testimonials</a>
-              <a href="#pricing" className="text-gray-600 hover:text-primary-600 transition-colors duration-200">Pricing</a>
+              
             </div>
             
             <div className="hidden md:flex items-center space-x-4">
               <Link 
                 to="/signin" 
-                className="text-primary-600 hover:text-primary-700 font-medium transition-colors duration-200"
+                className="text-orange-600 hover:text-orange-700 font-medium transition-colors duration-200"
               >
                 Sign In
               </Link>
               <Link 
                 to="/signup" 
-                className="bg-primary-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-primary-700 transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl"
+                className="bg-orange-500 text-white px-6 py-2 rounded-lg font-medium hover:bg-orange-600 transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl"
               >
                 Get Started
               </Link>
@@ -130,21 +171,18 @@ const LandingPage = () => {
 
         {/* Mobile Navigation */}
         {isMenuOpen && (
-          <div className="md:hidden bg-white border-t border-primary-100">
+          <div className="md:hidden bg-white border-t border-orange-200">
             <div className="px-4 py-4 space-y-4">
-              <a href="#features" className="block text-gray-600 hover:text-primary-600 transition-colors duration-200">Features</a>
-              <a href="#testimonials" className="block text-gray-600 hover:text-primary-600 transition-colors duration-200">Testimonials</a>
-              <a href="#pricing" className="block text-gray-600 hover:text-primary-600 transition-colors duration-200">Pricing</a>
-              <div className="pt-4 border-t border-primary-100 space-y-3">
+              <div className="pt-4 border-t border-orange-200 space-y-3">
                 <Link 
                   to="/signin" 
-                  className="block text-primary-600 hover:text-primary-700 font-medium transition-colors duration-200"
+                  className="block text-orange-600 hover:text-orange-700 font-medium transition-colors duration-200"
                 >
                   Sign In
                 </Link>
                 <Link 
                   to="/signup" 
-                  className="block bg-primary-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-primary-700 transition-colors duration-200 text-center"
+                  className="block bg-orange-500 text-white px-6 py-3 rounded-lg font-medium hover:bg-orange-600 transition-colors duration-200 text-center"
                 >
                   Get Started
                 </Link>
@@ -155,54 +193,61 @@ const LandingPage = () => {
       </nav>
 
       {/* Hero Section */}
-      <section className="pt-24 pb-16 px-4 sm:px-6 lg:px-8">
+      <section className="pt-20 sm:pt-24 pb-12 sm:pb-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto text-center">
           <div className={`transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 mb-6 leading-tight">
-              Crush Your Tasks,{' '}
-              <span className="bg-gradient-to-r from-primary-600 to-primary-700 bg-clip-text text-transparent">
-                Crush Your Goals
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-4 sm:mb-6 leading-tight px-2">
+              Stay{' '}
+              <span className="bg-gradient-to-r from-orange-500 to-pink-500 bg-clip-text text-transparent">
+                Sync'd
+              </span>
+              , Stay{' '}
+              <span className="bg-gradient-to-r from-orange-500 to-pink-500 bg-clip-text text-transparent">
+                Productive
               </span>
             </h1>
-            <p className="text-xl sm:text-2xl text-gray-600 mb-8 max-w-3xl mx-auto leading-relaxed">
-              The ultimate task management app that helps you stay organized, focused, and productive. 
-              Transform your workflow with intelligent features and beautiful design.
+            <p className="text-lg sm:text-xl md:text-2xl text-gray-600 mb-6 sm:mb-8 max-w-3xl mx-auto leading-relaxed px-4">
+              The ultimate task management app that keeps you organized, focused, and in sync. 
+              Transform your workflow with intelligent features and seamless synchronization.
             </p>
             
-            <div className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-6 mb-12">
+            <div className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-6 mb-8 sm:mb-12 px-4">
               <Link 
                 to="/signup" 
-                className="group bg-primary-600 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:bg-primary-700 transform hover:scale-105 transition-all duration-300 shadow-xl hover:shadow-2xl flex items-center space-x-2"
+                className="group bg-orange-500 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-xl font-semibold text-base sm:text-lg hover:bg-orange-600 transform hover:scale-105 transition-all duration-300 shadow-xl hover:shadow-2xl flex items-center space-x-2 w-full sm:w-auto justify-center"
               >
-                <span>Start Crushing Tasks</span>
-                <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform duration-200" />
+                <span>Start Syncing</span>
+                <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5 group-hover:translate-x-1 transition-transform duration-200" />
               </Link>
-              <button className="group flex items-center space-x-2 text-gray-600 hover:text-primary-600 transition-colors duration-200">
-                <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center group-hover:bg-primary-200 transition-colors duration-200">
-                  <Play className="h-5 w-5 text-primary-600 ml-1" />
+              <button 
+                onClick={() => setShowDemo(true)}
+                className="group flex items-center space-x-2 text-gray-600 hover:text-orange-600 transition-colors duration-200 w-full sm:w-auto justify-center"
+              >
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-orange-100 rounded-full flex items-center justify-center group-hover:bg-orange-200 transition-colors duration-200">
+                  <Play className="h-4 w-4 sm:h-5 sm:w-5 text-orange-600 ml-1" />
                 </div>
-                <span className="font-medium">Watch Demo</span>
+                <span className="font-medium text-sm sm:text-base">See How It Works</span>
               </button>
             </div>
           </div>
 
           {/* Hero Image/Animation */}
           <div className={`transition-all duration-1000 delay-500 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-            <div className="relative max-w-4xl mx-auto">
-              <div className="bg-gradient-to-r from-primary-100 to-purple-100 rounded-3xl p-8 shadow-2xl">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="relative max-w-4xl mx-auto px-4">
+              <div className="bg-gradient-to-r from-orange-100 to-pink-100 rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 shadow-2xl">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
                   {features.map((feature, index) => (
                     <div 
                       key={index}
-                      className={`p-6 bg-white rounded-2xl shadow-lg transition-all duration-500 ${
+                      className={`p-4 sm:p-6 bg-white rounded-xl sm:rounded-2xl shadow-lg transition-all duration-500 ${
                         activeFeature === index 
-                          ? 'transform scale-105 shadow-xl ring-2 ring-primary-200' 
+                          ? 'transform scale-105 shadow-xl ring-2 ring-orange-200' 
                           : 'hover:transform hover:scale-105 hover:shadow-xl'
                       }`}
                     >
-                      <div className="text-primary-600 mb-4">{feature.icon}</div>
-                      <h3 className="font-semibold text-gray-900 mb-2">{feature.title}</h3>
-                      <p className="text-gray-600 text-sm">{feature.description}</p>
+                      <div className="text-orange-600 mb-3 sm:mb-4 flex justify-center">{feature.icon}</div>
+                      <h3 className="font-semibold text-gray-900 mb-2 text-center text-sm sm:text-base">{feature.title}</h3>
+                      <p className="text-gray-600 text-xs sm:text-sm text-center">{feature.description}</p>
                     </div>
                   ))}
                 </div>
@@ -210,237 +255,120 @@ const LandingPage = () => {
             </div>
           </div>
 
-          {/* Scroll Indicator */}
-          <div className={`mt-12 transition-all duration-1000 delay-700 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
-            <button 
-              onClick={scrollToFeatures}
-              className="group animate-bounce"
-            >
-              <div className="w-6 h-10 border-2 border-primary-300 rounded-full flex justify-center">
-                <div className="w-1 h-3 bg-primary-400 rounded-full mt-2 group-hover:bg-primary-600 transition-colors duration-200"></div>
-              </div>
-              <ChevronDown className="h-5 w-5 text-primary-400 mx-auto mt-2 group-hover:text-primary-600 transition-colors duration-200" />
-            </button>
-          </div>
+
         </div>
       </section>
 
-      {/* Features Section */}
-      <section id="features" className="py-20 px-4 sm:px-6 lg:px-8 bg-white">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6">
-              Why Choose Task Crusher?
-            </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Built with modern technology and user experience in mind, Task Crusher delivers everything you need to stay productive.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {[
-              {
-                icon: <Target className="h-12 w-12" />,
-                title: "Smart Organization",
-                description: "AI-powered task categorization and intelligent priority suggestions based on your work patterns.",
-                color: "from-blue-500 to-blue-600"
-              },
-              {
-                icon: <TrendingUp className="h-12 w-12" />,
-                title: "Progress Analytics",
-                description: "Detailed insights into your productivity trends, completion rates, and time management efficiency.",
-                color: "from-green-500 to-green-600"
-              },
-              {
-                icon: <Zap className="h-12 w-12" />,
-                title: "Lightning Fast",
-                description: "Optimized for speed with instant updates, real-time sync, and responsive design across all devices.",
-                color: "from-yellow-500 to-yellow-600"
-              },
-              {
-                icon: <Users className="h-12 w-12" />,
-                title: "Team Collaboration",
-                description: "Seamless team coordination with shared workspaces, task assignments, and progress tracking.",
-                color: "from-purple-500 to-purple-600"
-              },
-              {
-                icon: <CheckCircle className="h-12 w-12" />,
-                title: "Goal Achievement",
-                description: "Set milestones, track progress, and celebrate achievements with our comprehensive goal management system.",
-                color: "from-red-500 to-red-600"
-              },
-              {
-                icon: <Star className="h-12 w-12" />,
-                title: "Premium Experience",
-                description: "Beautiful, intuitive interface designed to make task management enjoyable and stress-free.",
-                color: "from-indigo-500 to-indigo-600"
-              }
-            ].map((feature, index) => (
-              <div 
-                key={index}
-                className="group p-8 bg-gray-50 rounded-2xl hover:bg-white hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 cursor-pointer"
-              >
-                <div className={`w-16 h-16 bg-gradient-to-r ${feature.color} rounded-2xl flex items-center justify-center text-white mb-6 group-hover:scale-110 transition-transform duration-300`}>
-                  {feature.icon}
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-4">{feature.title}</h3>
-                <p className="text-gray-600 leading-relaxed">{feature.description}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Stats Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-primary-600 to-primary-700">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {stats.map((stat, index) => (
-              <div 
-                key={index}
-                className="text-center group hover:transform hover:scale-110 transition-transform duration-300"
-              >
-                <div className="text-4xl md:text-5xl font-bold text-white mb-2 group-hover:text-primary-100 transition-colors duration-300">
-                  {stat.number}
-                </div>
-                <div className="text-primary-100 group-hover:text-white transition-colors duration-300">
-                  {stat.label}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Testimonials Section */}
-      <section id="testimonials" className="py-20 px-4 sm:px-6 lg:px-8 bg-gray-50">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6">
-              What Our Users Say
-            </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Join thousands of satisfied users who have transformed their productivity with Task Crusher.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {testimonials.map((testimonial, index) => (
-              <div 
-                key={index}
-                className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2"
-              >
-                <div className="flex items-center mb-4">
-                  <div className="text-3xl mr-4">{testimonial.avatar}</div>
-                  <div>
-                    <h4 className="font-semibold text-gray-900">{testimonial.name}</h4>
-                    <p className="text-gray-600 text-sm">{testimonial.role}</p>
-                  </div>
-                </div>
-                <p className="text-gray-700 mb-4 leading-relaxed">"{testimonial.content}"</p>
-                <div className="flex items-center">
-                  {[...Array(testimonial.rating)].map((_, i) => (
-                    <Star key={i} className="h-5 w-5 text-yellow-400 fill-current" />
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-primary-600 to-primary-700">
+      {/* Simple Middle Section */}
+      <section className="py-8 sm:py-12 md:py-16 lg:py-20 px-4 sm:px-6 lg:px-8 bg-white">
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-3xl sm:text-4xl font-bold text-white mb-6">
-            Ready to Transform Your Productivity?
+          {/* Icon Container */}
+          <div className="w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 bg-gradient-to-r from-orange-100 to-pink-100 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6 md:mb-8 animate-pulse hover:animate-bounce transition-all duration-300 hover:scale-110 hover:shadow-lg">
+            <CheckCircle className="h-6 w-6 sm:h-8 sm:w-8 md:h-10 md:w-10 text-orange-600 animate-pulse" />
+          </div>
+          
+          {/* Title */}
+          <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 mb-3 sm:mb-4 md:mb-6 animate-fade-in-up px-2 sm:px-4 leading-tight">
+            <span className="inline-block animate-slide-in-left mb-1 sm:mb-0">Simple.</span>
+            <br className="sm:hidden" />
+            <span className="inline-block animate-slide-in-up mx-1 sm:mx-0">Powerful.</span>
+            <br className="sm:hidden" />
+            <span className="inline-block animate-slide-in-right">Effective.</span>
           </h2>
-          <p className="text-xl text-primary-100 mb-8">
-            Join thousands of users who have already revolutionized their task management with Task Crusher.
+          
+          {/* Description */}
+          <p className="text-base sm:text-lg md:text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed animate-fade-in-up delay-300 px-3 sm:px-4 mb-6 sm:mb-8">
+            Sync'd combines simplicity with powerful features to give you the perfect task management experience. 
+            <br className="hidden sm:block" />
+            No complex setup, no learning curve - just pure productivity.
           </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-6">
-            <Link 
-              to="/signup" 
-              className="group bg-white text-primary-600 px-8 py-4 rounded-xl font-semibold text-lg hover:bg-gray-50 transform hover:scale-105 transition-all duration-300 shadow-xl hover:shadow-2xl flex items-center space-x-2"
-            >
-              <span>Start Free Trial</span>
-              <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform duration-200" />
-            </Link>
-            <Link 
-              to="/signin" 
-              className="text-white hover:text-primary-100 font-medium transition-colors duration-200"
-            >
-              Already have an account? Sign in
-            </Link>
+          
+          {/* Floating Elements - Hidden on very small screens */}
+          <div className="relative mt-6 sm:mt-8 md:mt-12 hidden sm:block">
+            <div className="absolute -top-4 -left-4 sm:-left-8 w-3 h-3 sm:w-4 sm:h-4 bg-orange-200 rounded-full animate-float-slow"></div>
+            <div className="absolute -top-6 sm:-top-8 -right-6 sm:-right-12 w-2 h-2 sm:w-3 sm:h-3 bg-pink-200 rounded-full animate-float-medium"></div>
+            <div className="absolute -bottom-4 sm:-bottom-6 left-6 sm:left-12 w-1.5 h-1.5 sm:w-2 sm:h-2 bg-orange-300 rounded-full animate-float-fast"></div>
+            <div className="absolute -bottom-3 sm:-bottom-4 -right-6 sm:-right-8 w-2 h-2 sm:w-3 sm:h-3 bg-pink-300 rounded-full animate-float-slow"></div>
+          </div>
+          
+          {/* Mobile-friendly floating elements */}
+          <div className="relative mt-6 sm:hidden">
+            <div className="flex justify-center space-x-4">
+              <div className="w-2 h-2 bg-orange-200 rounded-full animate-float-slow"></div>
+              <div className="w-2 h-2 bg-pink-200 rounded-full animate-float-medium"></div>
+              <div className="w-2 h-2 bg-orange-300 rounded-full animate-float-fast"></div>
+            </div>
           </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-white py-16 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div className="col-span-1 md:col-span-2">
-              <div className="flex items-center space-x-2 mb-4">
-                <div className="w-8 h-8 bg-gradient-to-r from-primary-600 to-primary-700 rounded-lg flex items-center justify-center">
-                  <Target className="h-5 w-5 text-white" />
-                </div>
-                <span className="text-xl font-bold">Task Crusher</span>
-              </div>
-              <p className="text-gray-400 mb-6 max-w-md">
-                The ultimate task management app that helps you stay organized, focused, and productive. 
-                Transform your workflow with intelligent features and beautiful design.
-              </p>
-              <div className="flex space-x-4">
-                <a href="#" className="text-gray-400 hover:text-white transition-colors duration-200">
-                  <span className="sr-only">Twitter</span>
-                  <div className="w-8 h-8 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-primary-600 transition-colors duration-200">
-                    🐦
-                  </div>
-                </a>
-                <a href="#" className="text-gray-400 hover:text-white transition-colors duration-200">
-                  <span className="sr-only">LinkedIn</span>
-                  <div className="w-8 h-8 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-primary-600 transition-colors duration-200">
-                    💼
-                  </div>
-                </a>
-                <a href="#" className="text-gray-400 hover:text-white transition-colors duration-200">
-                  <span className="sr-only">GitHub</span>
-                  <div className="w-8 h-8 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-primary-600 transition-colors duration-200">
-                    📚
-                  </div>
-                </a>
-              </div>
-            </div>
-            
-            <div>
-              <h3 className="font-semibold mb-4">Product</h3>
-              <ul className="space-y-2">
-                <li><a href="#" className="text-gray-400 hover:text-white transition-colors duration-200">Features</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-white transition-colors duration-200">Pricing</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-white transition-colors duration-200">API</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-white transition-colors duration-200">Integrations</a></li>
-              </ul>
-            </div>
-            
-            <div>
-              <h3 className="font-semibold mb-4">Company</h3>
-              <ul className="space-y-2">
-                <li><a href="#" className="text-gray-400 hover:text-white transition-colors duration-200">About</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-white transition-colors duration-200">Blog</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-white transition-colors duration-200">Careers</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-white transition-colors duration-200">Contact</a></li>
-              </ul>
-            </div>
-          </div>
-          
-          <div className="border-t border-gray-800 mt-12 pt-8 text-center">
-            <p className="text-gray-400">
-              © 2024 Task Crusher. All rights reserved.
+      <footer className="bg-gray-900 text-white pb-4 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto text-center">
+          <div className="border-t border-gray-800 mt-8 sm:mt-12 pt-6 sm:pt-8 text-center">
+            <p className="text-gray-400 text-sm sm:text-base">
+              © 2025 Sync'd. All rights reserved.
             </p>
           </div>
         </div>
       </footer>
+
+      {/* Demo Modal */}
+      {showDemo && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4">
+          <div className="fixed inset-0 bg-black bg-opacity-50" onClick={() => setShowDemo(false)}></div>
+          <div className="relative bg-white rounded-xl sm:rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-4 sm:p-6 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl sm:text-2xl font-bold text-gray-900">See How Sync'd Works</h3>
+                <button
+                  onClick={() => setShowDemo(false)}
+                  className="text-gray-400 hover:text-gray-600 transition-colors duration-200"
+                >
+                  <X className="h-5 w-5 sm:h-6 sm:w-6" />
+                </button>
+              </div>
+              <p className="text-gray-600 mt-2 text-sm sm:text-base">Get a quick overview of Sync'd's key features and how they work together</p>
+            </div>
+            
+            <div className="p-4 sm:p-6">
+              <div className="grid grid-cols-1 gap-4 sm:gap-6">
+                {demoFeatures.map((feature, index) => (
+                  <div key={index} className="flex items-start space-x-3 p-3 sm:p-4 bg-gray-50 rounded-lg">
+                    <div className="flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+                      <div className="text-orange-600">{feature.icon}</div>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-gray-900 mb-1 text-sm sm:text-base">{feature.title}</h4>
+                      <p className="text-xs sm:text-sm text-gray-600">{feature.description}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              
+              <div className="mt-6 sm:mt-8 p-4 sm:p-6 bg-gradient-to-r from-orange-50 to-pink-50 rounded-xl">
+                <h4 className="font-semibold text-gray-900 mb-3 text-sm sm:text-base">Ready to try it yourself?</h4>
+                <p className="text-gray-600 mb-4 text-sm sm:text-base">Experience the power of Sync'd with our free trial. No credit card required.</p>
+                <div className="flex flex-col gap-3">
+                  <Link
+                    to="/signup"
+                    onClick={() => setShowDemo(false)}
+                    className="bg-orange-500 text-white px-4 sm:px-6 py-3 rounded-lg font-medium hover:bg-orange-600 transition-colors duration-200 text-center text-sm sm:text-base"
+                  >
+                    Start Free Trial
+                  </Link>
+                  <button
+                    onClick={() => setShowDemo(false)}
+                    className="text-orange-600 hover:text-orange-700 font-medium transition-colors duration-200 text-sm sm:text-base"
+                  >
+                    Maybe Later
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
