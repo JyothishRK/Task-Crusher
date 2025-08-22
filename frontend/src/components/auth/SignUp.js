@@ -96,7 +96,7 @@ const SignUp = () => {
             Back to Home
           </Link>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Create Account</h1>
-          <p className="text-gray-600">Join Task Crusher and start crushing your tasks</p>
+          <p className="text-gray-600">Join Sync'd and start organizing your tasks</p>
         </div>
 
         {/* Sign Up Form */}
@@ -250,7 +250,7 @@ const SignUp = () => {
         {/* Footer */}
         <div className="text-center mt-8">
           <p className="text-sm text-gray-500">
-            © 2024 Task Crusher. All rights reserved.
+            © 2024 Sync'd. All rights reserved.
           </p>
         </div>
       </div>

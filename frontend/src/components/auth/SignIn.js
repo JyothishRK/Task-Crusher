@@ -52,7 +52,7 @@ const SignIn = () => {
             Back to Home
           </Link>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome Back</h1>
-          <p className="text-gray-600">Sign in to your Task Crusher account</p>
+          <p className="text-gray-600">Sign in to your Sync'd account</p>
         </div>
 
         {/* Sign In Form */}
@@ -137,7 +137,7 @@ const SignIn = () => {
         {/* Footer */}
         <div className="text-center mt-8">
           <p className="text-sm text-gray-500">
-            © 2024 Task Crusher. All rights reserved.
+            © 2024 Sync'd. All rights reserved.
           </p>
         </div>
       </div>

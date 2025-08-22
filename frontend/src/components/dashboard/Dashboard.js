@@ -195,7 +195,7 @@ const Dashboard = () => {
       <div className="bg-gradient-purple w-full py-6 text-white">
         <div className="text-center px-4">
           <h1 className="text-xl font-bold">Welcome, {user?.name}! 👋</h1>
-          <p className="text-primary-100 mt-1 text-sm">Manage your tasks for today</p>
+          <p className="text-primary-100 mt-1 text-sm">Stay sync'd with your tasks for today</p>
         </div>
       </div>
 
