@@ -1,67 +1,203 @@
-const { Resend } = require('resend');
+const axios = require('axios');
 
-let resend = null;
+// MailerLite API configuration
+const MAILERLITE_API_BASE = 'https://connect.mailerlite.com/api';
+let apiKey = null;
 
-if (!process.env.RESEND_API_KEY) {
-    console.error('Error: RESEND_API_KEY environment variable is not set');
-} else {
-    resend = new Resend(process.env.RESEND_API_KEY);
-}
+// Initialize API key
+const initializeEmailService = () => {
+    if (!process.env.MAILERLITE_API_KEY) {
+        throw new Error('MAILERLITE_API_KEY environment variable is not set');
+    }
+    apiKey = process.env.MAILERLITE_API_KEY;
+    return true;
+};
 
+// Helper function to create API headers
+const createHeaders = () => ({
+    'Authorization': `Bearer ${apiKey}`,
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+    'X-Version': '2024-01-01'
+});
+
+// Helper function to check if subscriber exists
+const checkSubscriberExists = async (email) => {
+    try {
+        const response = await axios.get(`${MAILERLITE_API_BASE}/subscribers/${email}`, {
+            headers: createHeaders()
+        });
+        return { exists: true, subscriber: response.data.data };
+    } catch (error) {
+        if (error.response?.status === 404) {
+            return { exists: false, subscriber: null };
+        }
+        throw error;
+    }
+};
+
+// Helper function to create or update subscriber
+const createOrUpdateSubscriber = async (email, name, status = 'active') => {
+    const subscriberData = {
+        email: email,
+        fields: { name: name },
+        status: status
+    };
+
+    try {
+        const response = await axios.post(`${MAILERLITE_API_BASE}/subscribers`, subscriberData, {
+            headers: createHeaders()
+        });
+        return response.data.data?.id;
+    } catch (error) {
+        throw new Error(`Failed to create subscriber: ${error.response?.data?.message || error.message}`);
+    }
+};
+
+// Helper function to update existing subscriber
+const updateSubscriber = async (email, updateData) => {
+    try {
+        const response = await axios.put(`${MAILERLITE_API_BASE}/subscribers/${email}`, updateData, {
+            headers: createHeaders()
+        });
+        return response.data.data;
+    } catch (error) {
+        throw new Error(`Failed to update subscriber: ${error.response?.data?.message || error.message}`);
+    }
+};
+
+// Helper function to create temporary group
+const createTemporaryGroup = async (groupName) => {
+    const groupData = {
+        name: groupName,
+        type: 'temporary'
+    };
+
+    try {
+        const response = await axios.post(`${MAILERLITE_API_BASE}/groups`, groupData, {
+            headers: createHeaders()
+        });
+        return response.data.data?.id;
+    } catch (error) {
+        throw new Error(`Failed to create group: ${error.response?.data?.message || error.message}`);
+    }
+};
+
+// Helper function to add subscriber to group
+const addSubscriberToGroup = async (email, groupId) => {
+    try {
+        await axios.post(`${MAILERLITE_API_BASE}/subscribers/${email}/groups/${groupId}`, {}, {
+            headers: createHeaders()
+        });
+        return true;
+    } catch (error) {
+        throw new Error(`Failed to add subscriber to group: ${error.response?.data?.message || error.message}`);
+    }
+};
+
+// Main welcome email function
 const sendWelcomeEmail = async (email, name) => {
-    const emailData = {
-        from: 'Task Crusher <onboarding@resend.dev>',
-        to: [email],
-        subject: 'Welcome to Task Crusher! 🚀',
-        text: `Hi ${name},\n\nWelcome to Task Crusher! We're thrilled to have you on board. Task Crusher is here to help you track your tasks, stay organized, and crush your goals with ease.\n\nGet started by logging in and exploring your dashboard. If you have any questions, feel free to reach out.\n\nHere's to smashing those tasks!\n\nCheers,\nThe Task Crusher Team`,
-        html: `
-            <p>Hi <strong>${name}</strong>,</p>
-            <p>Welcome to <strong>Task Crusher</strong>! We're thrilled to have you on board. Task Crusher is here to help you track your tasks, stay organized, and crush your goals with ease.</p>
-            <p>Get started by logging in and exploring your dashboard. If you have any questions, feel free to reach out.</p>
-            <p>Here's to smashing those tasks! 🚀</p>
-            <p>Cheers,<br>The Task Crusher Team</p>
-        `,
-    };
-    
     try {
-        if (!resend) {
-            throw new Error('Email service not initialized - RESEND_API_KEY is missing');
+        if (!apiKey) {
+            initializeEmailService();
         }
-        await resend.emails.send(emailData);
-        console.log('Welcome email sent to:', email);
+
+        // Check if subscriber already exists
+        const { exists, subscriber } = await checkSubscriberExists(email);
+        let subscriberId = subscriber?.id;
+
+        // Create or update subscriber
+        if (!subscriberId) {
+            subscriberId = await createOrUpdateSubscriber(email, name);
+        } else {
+            await updateSubscriber(email, {
+                status: 'active',
+                fields: { name: name }
+            });
+        }
+
+        // Create temporary welcome group
+        const groupName = `welcome-${Date.now()}`;
+        const groupId = await createTemporaryGroup(groupName);
+
+        // Add subscriber to welcome group
+        await addSubscriberToGroup(email, groupId);
+
+        // Update subscriber with welcome email trigger fields
+        const triggerFields = {
+            fields: {
+                name: name,
+                welcome_email_trigger: 'true',
+                welcome_date: new Date().toISOString(),
+                user_type: 'new_user',
+                last_welcome_attempt: new Date().toISOString()
+            }
+        };
+        
+        await updateSubscriber(email, triggerFields);
+        
+        return {
+            success: true,
+            subscriberId,
+            groupId,
+            message: 'Welcome email automation setup completed'
+        };
+        
     } catch (error) {
-        console.error('Error sending email:', error);
+        throw new Error(`Welcome email setup failed: ${error.message}`);
     }
 };
 
+// Main account deletion email function
 const sendAccountDeletionEmail = async (email, name) => {
-    const emailData = {
-        from: 'Task Crusher <onboarding@resend.dev>',
-        to: [email],
-        subject: 'Your Task Crusher Account Has Been Deleted',
-        text: `Hi ${name},\n\nWe're writing to confirm that your Task Crusher account has been successfully deleted. We're sorry to see you go, but we respect your decision.\n\nIf this was a mistake or you'd like to rejoin in the future, we'd be happy to welcome you back. Your productivity journey is always welcome here!\n\nThank you for giving Task Crusher a try. Wishing you all the best!\n\nCheers,\nThe Task Crusher Team`,
-        html: `
-            <p>Hi <strong>${name}</strong>,</p>
-            <p>We're writing to confirm that your <strong>Task Crusher</strong> account has been successfully deleted. We're sorry to see you go, but we respect your decision.</p>
-            <p>If this was a mistake or you'd like to rejoin in the future, we'd be happy to welcome you back. Your productivity journey is always welcome here!</p>
-            <p>Thank you for giving Task Crusher a try. Wishing you all the best!</p>
-            <p>Cheers,<br>The Task Crusher Team</p>
-        `,
-    };
-    
     try {
-        if (!resend) {
-            throw new Error('Email service not initialized - RESEND_API_KEY is missing');
+        if (!apiKey) {
+            initializeEmailService();
         }
-        await resend.emails.send(emailData);
-        console.log('Account deletion email sent to:', email);
+
+        // Update subscriber with deletion trigger fields
+        const deletionData = {
+            fields: {
+                name: name,
+                account_deleted: 'true',
+                deletion_date: new Date().toISOString()
+            }
+        };
+        
+        try {
+            await updateSubscriber(email, deletionData);
+            return {
+                success: true,
+                message: 'Account deletion email automation triggered'
+            };
+        } catch (updateError) {
+            if (updateError.message.includes('404')) {
+                // Subscriber doesn't exist, which is fine for account deletion
+                return {
+                    success: true,
+                    message: 'Subscriber not found (already deleted), no email needed'
+                };
+            }
+            throw updateError;
+        }
+        
     } catch (error) {
-        console.error('Error sending email:', error);
+        throw new Error(`Account deletion email setup failed: ${error.message}`);
     }
 };
 
+// Email service status check
+const getEmailServiceStatus = () => {
+    return {
+        initialized: !!apiKey,
+        apiKeySet: !!process.env.MAILERLITE_API_KEY,
+        baseUrl: MAILERLITE_API_BASE
+    };
+};
 
 module.exports = {
     sendWelcomeEmail,
     sendAccountDeletionEmail,
-}
+    getEmailServiceStatus,
+    initializeEmailService
+};

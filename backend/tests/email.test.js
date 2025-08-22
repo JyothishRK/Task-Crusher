@@ -3,22 +3,22 @@ require('dotenv').config();
 
 const { sendWelcomeEmail, sendAccountDeletionEmail } = require('../src/emails/account');
 
-// Test script for email functionality with Resend
+// Test script for email functionality with MailerLite
 async function testEmailFunctionality() {
-    console.log('🧪 Testing email functionality with Resend...\n');
+    console.log('🧪 Testing email functionality with MailerLite...\n');
     
     // Test environment variable
-    if (!process.env.RESEND_API_KEY) {
-        console.error('❌ RESEND_API_KEY environment variable is not set');
-        console.log('Please set RESEND_API_KEY in your environment before running tests');
+    if (!process.env.MAILERLITE_API_KEY) {
+        console.error('❌ MAILERLITE_API_KEY environment variable is not set');
+        console.log('Please set MAILERLITE_API_KEY in your environment before running tests');
         return;
     } else {
-        console.log('✅ RESEND_API_KEY environment variable is set');
+        console.log('✅ MAILERLITE_API_KEY environment variable is set');
     }
     
     // Test data
     const testEmail = 'rkjyothish@gmail.com';
-    const testName = 'Rk Jyothish';
+    const testName = 'R K Jyothish';
     
     console.log(`📬 Testing emails to: ${testEmail}`);
     
@@ -40,8 +40,8 @@ async function testEmailFunctionality() {
     
     console.log('\n--- Testing Error Handling ---');
     // Temporarily remove API key to test error handling
-    const originalApiKey = process.env.RESEND_API_KEY;
-    delete process.env.RESEND_API_KEY;
+    const originalApiKey = process.env.MAILERLITE_API_KEY;
+    delete process.env.MAILERLITE_API_KEY;
     
     try {
         // Re-require the module to test missing API key handling
@@ -54,11 +54,12 @@ async function testEmailFunctionality() {
     }
     
     // Restore API key
-    process.env.RESEND_API_KEY = originalApiKey;
+    process.env.MAILERLITE_API_KEY = originalApiKey;
     
     console.log('\n--- Test Summary ---');
     console.log('Email migration testing completed.');
-    console.log('Note: Actual email delivery depends on valid RESEND_API_KEY and email service configuration.');
+    console.log('Note: Actual email delivery depends on valid MAILERLITE_API_KEY and email service configuration.');
+    console.log('Make sure the "Account Activation" template exists in your MailerLite account.');
 }
 
 // Run tests if this file is executed directly

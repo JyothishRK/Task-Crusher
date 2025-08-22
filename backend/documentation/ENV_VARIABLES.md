@@ -77,11 +77,11 @@ This document describes all environment variables used by the Task Crusher API f
 
 ## Email Configuration Variables
 
-### RESEND_API_KEY
-- **Description**: Resend API key for sending emails
+### MAILERLITE_API_KEY
+- **Description**: MailerLite API key for sending emails
 - **Type**: String
 - **Required**: Yes (for email functionality)
-- **Example**: `RESEND_API_KEY=re_your-resend-api-key`
+- **Example**: `MAILERLITE_API_KEY=your-mailerlite-api-key`
 
 ### SERVICE_URL
 - **Description**: Base URL of the service (used in emails)
@@ -133,7 +133,7 @@ COOKIE_MAX_AGE=86400000
 ALLOWED_ORIGINS=http://localhost:3000,http://localhost:3001,http://127.0.0.1:3000
 
 # Email Configuration
-RESEND_API_KEY=re_your-resend-api-key
+MAILERLITE_API_KEY=your-mailerlite-api-key
 SERVICE_URL=http://localhost:3000
 ```
 

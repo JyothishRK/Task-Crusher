@@ -5,13 +5,17 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "env-cmd nodemon src/index.js",
-    "test": "node tests/health.test.js"
+    "test": "node tests/health.test.js",
+    "test:email": "node tests/email.test.js",
+    "verify:mailerlite": "node verify-mailerlite-setup.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@mailerlite/mailerlite-nodejs": "^1.4.1",
+    "axios": "^1.11.0",
     "bcryptjs": "^2.4.3",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
@@ -21,7 +25,6 @@
     "mongodb": "^6.12.0",
     "mongoose": "^8.8.4",
     "multer": "^1.4.5-lts.1",
-    "resend": "^4.0.1",
     "sharp": "^0.33.5",
     "validator": "^13.12.0"
   },
