@@ -282,14 +282,14 @@ const TaskDetail = () => {
     if (isCompleted) return 'text-green-600';
     const date = new Date(dueDate);
     if (isPast(date)) return 'text-red-600';
-    if (isToday(date)) return 'text-orange-600';
+    if (isToday(date)) return 'text-blue-600';
     return 'text-gray-600';
   };
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
       </div>
     );
   }
@@ -355,7 +355,7 @@ const TaskDetail = () => {
              {!task.isCompleted && (
                <button
                  onClick={openEditModal}
-                 className="flex items-center justify-center flex-1 px-4 py-3 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors text-base font-medium"
+                 className="flex items-center justify-center flex-1 px-4 py-3 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors text-base font-medium"
                >
                  <Edit className="h-5 w-5 mr-2" />
                  Edit
@@ -499,7 +499,7 @@ const TaskDetail = () => {
           <div className="p-6">
             {subtaskLoading ? (
               <div className="flex items-center justify-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
               </div>
             ) : subtasks.length === 0 ? (
               <div className="text-center py-8 text-gray-500">

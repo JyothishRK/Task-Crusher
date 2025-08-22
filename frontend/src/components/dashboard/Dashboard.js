@@ -159,7 +159,7 @@ const Dashboard = () => {
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
       </div>
     );
   }
@@ -192,10 +192,10 @@ const Dashboard = () => {
   return (
     <div className="space-y-4">
       {/* Welcome Header - Full Width */}
-      <div className="bg-gradient-purple w-full py-6 text-white">
+      <div className="bg-gradient-to-r from-blue-600 to-blue-800 w-full py-6 text-white">
         <div className="text-center px-4">
           <h1 className="text-xl font-bold">Welcome, {user?.name}! 👋</h1>
-          <p className="text-primary-100 mt-1 text-sm">Stay sync'd with your tasks for today</p>
+          <p className="text-blue-100 mt-1 text-sm">Stay sync'd with your tasks for today</p>
         </div>
       </div>
 
@@ -234,9 +234,9 @@ const Dashboard = () => {
               onClick={() => setSelectedDate(day)}
               className={`p-3 rounded-lg text-center transition-all ${
                 isSelected
-                  ? 'bg-primary-600 text-white shadow-lg'
+                  ? 'bg-blue-600 text-white shadow-lg'
                   : isCurrentDay
-                  ? 'bg-primary-100 text-primary-700 border-2 border-primary-300'
+                  ? 'bg-blue-100 text-blue-700 border-2 border-blue-300'
                   : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
               }`}
             >
@@ -277,7 +277,7 @@ const Dashboard = () => {
           {pendingTasks.length > 0 && (
             <div>
               <h4 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
-                <Clock className="h-5 w-5 text-warning-600 mr-2" />
+                <Clock className="h-5 w-5 text-blue-600 mr-2" />
                 Pending Tasks ({pendingTasks.length})
               </h4>
               <div className="space-y-3">
@@ -298,7 +298,7 @@ const Dashboard = () => {
           {completedTasks.length > 0 && (
             <div>
               <h4 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
-                <CheckCircle className="h-5 w-5 text-success-600 mr-2" />
+                <CheckCircle className="h-5 w-5 text-green-600 mr-2" />
                 Completed Tasks ({completedTasks.length})
               </h4>
               <div className="space-y-3">

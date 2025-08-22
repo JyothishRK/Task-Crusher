@@ -214,7 +214,7 @@ const TaskCard = ({ task, onTaskUpdated, onTaskDeleted, allowActions = true }) =
                   e.stopPropagation();
                   openEditModal();
                 }}
-                className="text-purple-600 hover:text-purple-800 p-1 rounded hover:bg-purple-50 transition-colors"
+                className="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50 transition-colors"
                 title="Edit task"
               >
                 <Pencil className="h-4 w-4" />

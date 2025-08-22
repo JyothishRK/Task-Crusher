@@ -43,11 +43,11 @@ const SignIn = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-pink-50 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100 flex items-center justify-center px-4">
       <div className="max-w-md w-full">
         {/* Header */}
         <div className="text-center mb-8">
-          <Link to="/" className="inline-flex items-center text-orange-600 hover:text-orange-700 mb-4 text-sm font-medium">
+          <Link to="/" className="inline-flex items-center text-blue-600 hover:text-blue-700 mb-4 text-sm font-medium">
             <ArrowRight className="h-4 w-4 mr-1 rotate-180" />
             Back to Home
           </Link>
@@ -117,7 +117,7 @@ const SignIn = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 text-base font-medium text-white bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-lg"
+              className="w-full py-3 text-base font-medium text-white bg-gradient-to-r from-blue-500 to-blue-300 hover:from-blue-600 hover:to-blue-400 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-lg"
             >
               {loading ? 'Signing In...' : 'Sign In'}
             </button>
@@ -127,7 +127,7 @@ const SignIn = () => {
           <div className="mt-6 text-center">
             <p className="text-gray-600">
               Don't have an account?{' '}
-              <Link to="/signup" className="text-orange-600 hover:text-orange-700 font-medium">
+              <Link to="/signup" className="text-blue-600 hover:text-blue-700 font-medium">
                 Sign up here
               </Link>
             </p>

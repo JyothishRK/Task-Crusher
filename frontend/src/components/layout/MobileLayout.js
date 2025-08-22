@@ -57,8 +57,8 @@ const MobileLayout = () => {
             onClick={() => setActiveTab('dashboard')}
             className={`flex flex-col items-center py-2 px-3 rounded-lg transition-colors ${
               activeTab === 'dashboard'
-                ? 'text-primary-600 bg-primary-50'
-                : 'text-gray-500 hover:text-gray-700'
+                ? 'text-blue-600 bg-blue-50'
+                : 'text-gray-600 hover:text-gray-900'
             }`}
           >
             <Home className="h-6 w-6 mb-1" />
@@ -68,9 +68,9 @@ const MobileLayout = () => {
           {/* Add Task Tab */}
           <button
             onClick={() => setShowAddTask(true)}
-            className="flex flex-col items-center py-2 px-3 rounded-lg transition-colors text-primary-600 hover:text-primary-700"
+            className="flex flex-col items-center py-2 px-3 rounded-lg transition-colors text-blue-600 hover:text-blue-700"
           >
-            <div className="h-6 w-6 mb-1 bg-primary-600 rounded-full flex items-center justify-center">
+            <div className="h-6 w-6 mb-1 bg-blue-600 rounded-full flex items-center justify-center">
               <Plus className="h-4 w-4 text-white" />
             </div>
             <span className="text-xs font-medium">Add Task</span>
@@ -81,8 +81,8 @@ const MobileLayout = () => {
             onClick={() => setActiveTab('analytics')}
             className={`flex flex-col items-center py-2 px-3 rounded-lg transition-colors ${
               activeTab === 'analytics'
-                ? 'text-primary-600 bg-primary-50'
-                : 'text-gray-500 hover:text-gray-700'
+                ? 'text-blue-600 bg-blue-50'
+                : 'text-gray-600 hover:text-gray-900'
             }`}
           >
             <BarChart3 className="h-6 w-6 mb-1" />
@@ -97,8 +97,8 @@ const MobileLayout = () => {
             }}
             className={`flex flex-col items-center py-2 px-3 rounded-lg transition-colors ${
               activeTab === 'profile'
-                ? 'text-primary-600 bg-primary-50'
-                : 'text-gray-500 hover:text-gray-700'
+                ? 'text-blue-600 bg-blue-50'
+                : 'text-gray-600 hover:text-gray-900'
             }`}
           >
             <User className="h-6 w-6 mb-1" />

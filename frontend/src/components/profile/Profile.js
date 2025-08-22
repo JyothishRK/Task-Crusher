@@ -297,7 +297,7 @@ const Profile = () => {
               {!isEditMode ? (
                 <button
                   onClick={handleEdit}
-                  className="px-3 py-1.5 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors flex items-center text-sm"
+                  className="px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors flex items-center text-sm"
                 >
                   <Edit3 className="h-4 w-4 mr-1.5" />
                   Edit
