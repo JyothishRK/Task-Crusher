@@ -5,14 +5,17 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "env-cmd nodemon src/index.js",
-    "test": "node tests/health.test.js"
+    "test": "node tests/health.test.js",
+    "test:email": "node tests/email.test.js",
+    "verify:mailerlite": "node verify-mailerlite-setup.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "@sendgrid/mail": "^8.1.4",
+    "@mailerlite/mailerlite-nodejs": "^1.4.1",
+    "axios": "^1.11.0",
     "bcryptjs": "^2.4.3",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
