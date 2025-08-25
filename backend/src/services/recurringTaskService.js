@@ -300,6 +300,14 @@ class RecurringTaskService {
                     const targetDate = new Date(currentDate);
                     targetDate.setDate(currentDate.getDate() + 3); // Generate for next 3 days
                     
+                    logRecurringTaskInfo('generation', `Date comparison window established`, {
+                        parentTaskId: parentTask.taskId,
+                        currentDate: currentDate.toISOString(),
+                        targetDate: targetDate.toISOString(),
+                        targetDateString: targetDate.toDateString(),
+                        latestInstanceDate: latestInstanceDate.toISOString()
+                    });
+                    
                     // Generate missing instances
                     const missingInstances = [];
                     let nextDate = new Date(latestInstanceDate);
@@ -307,7 +315,31 @@ class RecurringTaskService {
                     // Start from the next occurrence after the latest instance
                     nextDate = this.calculateNextDate(nextDate, parentTask.repeatType);
                     
-                    while (nextDate <= targetDate) {
+                    logRecurringTaskInfo('generation', `Starting date comparison loop with fixed logic`, {
+                        parentTaskId: parentTask.taskId,
+                        firstNextDate: nextDate.toISOString(),
+                        firstNextDateString: nextDate.toDateString(),
+                        targetDateString: targetDate.toDateString(),
+                        comparisonMethod: 'toDateString() - date-only comparison'
+                    });
+                    
+                    while (this.validateDateComparison(nextDate, targetDate, parentTask.taskId) && 
+                           this.compareDatesOnly(nextDate, targetDate) <= 0) {
+                        
+                        // Log each comparison for debugging
+                        const oldComparisonResult = nextDate <= targetDate;
+                        const newComparisonResult = this.compareDatesOnly(nextDate, targetDate) <= 0;
+                        
+                        if (oldComparisonResult !== newComparisonResult) {
+                            logRecurringTaskInfo('generation', `Date comparison fix applied - old vs new logic difference detected`, {
+                                parentTaskId: parentTask.taskId,
+                                nextDate: nextDate.toISOString(),
+                                targetDate: targetDate.toISOString(),
+                                oldComparison: `${nextDate.toISOString()} <= ${targetDate.toISOString()} = ${oldComparisonResult}`,
+                                newComparison: `compareDatesOnly(${nextDate.toDateString()}, ${targetDate.toDateString()}) <= 0 = ${newComparisonResult}`,
+                                fixApplied: true
+                            });
+                        }
                         // Check if instance already exists for this date
                         const existsForDate = existingInstances.some(instance => {
                             const instanceDate = new Date(instance.dueDate);
@@ -318,9 +350,53 @@ class RecurringTaskService {
                             missingInstances.push(new Date(nextDate));
                         }
                         
-                        // Calculate next occurrence
-                        nextDate = this.calculateNextDate(nextDate, parentTask.repeatType);
+                        // Calculate next occurrence with error handling
+                        try {
+                            const previousDate = new Date(nextDate);
+                            nextDate = this.calculateNextDate(nextDate, parentTask.repeatType);
+                            
+                            // Validate that the calculation produced a reasonable result
+                            if (!nextDate || !(nextDate instanceof Date) || isNaN(nextDate.getTime())) {
+                                logRecurringTaskError('generation', 'calculateNextDate returned invalid result', {
+                                    parentTaskId: parentTask.taskId,
+                                    previousDate: previousDate.toISOString(),
+                                    repeatType: parentTask.repeatType,
+                                    result: nextDate
+                                });
+                                break; // Exit the loop to prevent infinite loop
+                            }
+                            
+                            // Check for infinite loop protection (date should always advance)
+                            if (nextDate.getTime() <= previousDate.getTime()) {
+                                logRecurringTaskError('generation', 'calculateNextDate did not advance the date - potential infinite loop', {
+                                    parentTaskId: parentTask.taskId,
+                                    previousDate: previousDate.toISOString(),
+                                    nextDate: nextDate.toISOString(),
+                                    repeatType: parentTask.repeatType
+                                });
+                                break; // Exit the loop to prevent infinite loop
+                            }
+                            
+                        } catch (calculateError) {
+                            logRecurringTaskError('generation', 'calculateNextDate threw an error', {
+                                parentTaskId: parentTask.taskId,
+                                currentDate: nextDate.toISOString(),
+                                repeatType: parentTask.repeatType,
+                                error: calculateError.message,
+                                stack: calculateError.stack
+                            });
+                            break; // Exit the loop on calculation error
+                        }
                     }
+                    
+                    logRecurringTaskInfo('generation', `Date comparison loop completed`, {
+                        parentTaskId: parentTask.taskId,
+                        finalNextDate: nextDate.toISOString(),
+                        finalNextDateString: nextDate.toDateString(),
+                        targetDateString: targetDate.toDateString(),
+                        missingInstancesFound: missingInstances.length,
+                        comparisonExceeded: `${nextDate.toDateString()} > ${targetDate.toDateString()}`
+                    });
                     
                     // Generate the missing instances
                     let generatedForTask = 0;
@@ -412,7 +488,9 @@ class RecurringTaskService {
                 processed: tasksProcessed,
                 generated: totalGenerated,
                 errors: errors.length,
-                duration: `${duration}ms`
+                duration: `${duration}ms`,
+                timestampFixApplied: true,
+                comparisonMethod: 'date-only using toDateString()'
             });
             
             logCronJob('recurring_task_maintenance', 'SUCCESS', result.summary);
@@ -661,6 +739,165 @@ class RecurringTaskService {
 
         } catch (error) {
             throw new Error(`Failed to delete recurring instances: ${error.message}`);
+        }
+    }
+
+    /**
+     * Compare two dates using date-only comparison (the fixed method)
+     * @param {Date} date1 - First date
+     * @param {Date} date2 - Second date
+     * @returns {number} -1 if date1 < date2, 0 if equal, 1 if date1 > date2
+     */
+    static compareDatesOnly(date1, date2) {
+        const d1 = new Date(date1);
+        const d2 = new Date(date2);
+        
+        // Normalize to date-only by setting time to midnight
+        d1.setHours(0, 0, 0, 0);
+        d2.setHours(0, 0, 0, 0);
+        
+        if (d1.getTime() < d2.getTime()) return -1;
+        if (d1.getTime() > d2.getTime()) return 1;
+        return 0;
+    }
+
+    /**
+     * Test and log date comparison behavior for debugging
+     * @param {Date} cronTime - The CRON execution time
+     * @param {Date} taskTime - The task scheduled time
+     * @param {number} parentTaskId - Parent task ID for logging
+     * @returns {Object} Comparison results
+     */
+    static testDateComparison(cronTime, taskTime, parentTaskId) {
+        const { logRecurringTaskInfo } = require('../utils/logger');
+        
+        try {
+            const targetDate = new Date(cronTime);
+            targetDate.setDate(cronTime.getDate() + 3);
+            
+            const oldComparison = taskTime <= targetDate;
+            const newComparison = this.compareDatesOnly(taskTime, targetDate) <= 0;
+            
+            const result = {
+                cronTime: cronTime.toISOString(),
+                taskTime: taskTime.toISOString(),
+                targetDate: targetDate.toISOString(),
+                oldComparison: {
+                    expression: `${taskTime.toISOString()} <= ${targetDate.toISOString()}`,
+                    result: oldComparison
+                },
+                newComparison: {
+                    expression: `compareDatesOnly(${taskTime.toDateString()}, ${targetDate.toDateString()}) <= 0`,
+                    result: newComparison
+                },
+                fixEffective: oldComparison !== newComparison,
+                wouldBeGenerated: newComparison
+            };
+            
+            logRecurringTaskInfo('generation', 'Date comparison test results', {
+                parentTaskId,
+                ...result
+            });
+            
+            return result;
+            
+        } catch (error) {
+            const { logRecurringTaskError } = require('../utils/logger');
+            logRecurringTaskError('generation', 'Date comparison test failed', {
+                parentTaskId,
+                error: error.message,
+                stack: error.stack
+            });
+            return null;
+        }
+    }
+
+    /**
+     * Validate date comparison inputs and log potential issues
+     * @param {Date} nextDate - The next occurrence date
+     * @param {Date} targetDate - The target comparison date
+     * @param {number} parentTaskId - Parent task ID for logging
+     * @returns {boolean} True if dates are valid for comparison
+     */
+    static validateDateComparison(nextDate, targetDate, parentTaskId) {
+        const { logRecurringTaskError, logRecurringTaskWarning } = require('../utils/logger');
+        
+        try {
+            // Check if dates are valid Date objects
+            if (!nextDate || !(nextDate instanceof Date) || isNaN(nextDate.getTime())) {
+                logRecurringTaskError('generation', 'Invalid nextDate in date comparison', {
+                    parentTaskId,
+                    nextDate: nextDate ? nextDate.toString() : 'null/undefined',
+                    nextDateType: typeof nextDate
+                });
+                return false;
+            }
+            
+            if (!targetDate || !(targetDate instanceof Date) || isNaN(targetDate.getTime())) {
+                logRecurringTaskError('generation', 'Invalid targetDate in date comparison', {
+                    parentTaskId,
+                    targetDate: targetDate ? targetDate.toString() : 'null/undefined',
+                    targetDateType: typeof targetDate
+                });
+                return false;
+            }
+            
+            // Check for extreme date values that might indicate calculation errors
+            const minDate = new Date('1900-01-01');
+            const maxDate = new Date('2100-12-31');
+            
+            if (nextDate < minDate || nextDate > maxDate) {
+                logRecurringTaskWarning('generation', 'nextDate is outside reasonable range', {
+                    parentTaskId,
+                    nextDate: nextDate.toISOString(),
+                    minDate: minDate.toISOString(),
+                    maxDate: maxDate.toISOString()
+                });
+            }
+            
+            if (targetDate < minDate || targetDate > maxDate) {
+                logRecurringTaskWarning('generation', 'targetDate is outside reasonable range', {
+                    parentTaskId,
+                    targetDate: targetDate.toISOString(),
+                    minDate: minDate.toISOString(),
+                    maxDate: maxDate.toISOString()
+                });
+            }
+            
+            // Check if toDateString() method works correctly
+            try {
+                const nextDateString = nextDate.toDateString();
+                const targetDateString = targetDate.toDateString();
+                
+                if (!nextDateString || !targetDateString) {
+                    logRecurringTaskError('generation', 'toDateString() returned invalid result', {
+                        parentTaskId,
+                        nextDate: nextDate.toISOString(),
+                        targetDate: targetDate.toISOString(),
+                        nextDateString,
+                        targetDateString
+                    });
+                    return false;
+                }
+            } catch (dateStringError) {
+                logRecurringTaskError('generation', 'toDateString() method failed', {
+                    parentTaskId,
+                    nextDate: nextDate.toISOString(),
+                    targetDate: targetDate.toISOString(),
+                    error: dateStringError.message
+                });
+                return false;
+            }
+            
+            return true;
+            
+        } catch (error) {
+            logRecurringTaskError('generation', 'Date comparison validation failed with unexpected error', {
+                parentTaskId,
+                error: error.message,
+                stack: error.stack
+            });
+            return false;
         }
     }
 

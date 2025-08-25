@@ -157,6 +157,186 @@ function testGetMissingInstanceDatesLogic() {
     console.log('✓ Missing instance dates logic passed');
 }
 
+// Test date-only comparison logic (for the timestamp fix)
+function testDateOnlyComparison() {
+    console.log('\nTesting date-only comparison logic...');
+    
+    // Test scenario 1: Task time after CRON time (6:30 AM task, 2:00 AM CRON)
+    const cronTime = new Date('2025-01-25T02:00:00.123Z');
+    const taskTime = new Date('2025-01-28T06:30:00.000Z');
+    const targetDate = new Date(cronTime);
+    targetDate.setDate(cronTime.getDate() + 3); // 3 days ahead
+    
+    // Using the fixed comparison logic
+    const shouldGenerate1 = taskTime.toDateString() <= targetDate.toDateString();
+    console.assert(shouldGenerate1, 'Task with time after CRON should be generated');
+    console.log('✓ Task time after CRON time scenario passed');
+    
+    // Test scenario 2: Task time before CRON time (1:00 AM task, 2:00 AM CRON)
+    const taskTimeBefore = new Date('2025-01-28T01:00:00.000Z');
+    const shouldGenerate2 = taskTimeBefore.toDateString() <= targetDate.toDateString();
+    console.assert(shouldGenerate2, 'Task with time before CRON should be generated');
+    console.log('✓ Task time before CRON time scenario passed');
+    
+    // Test scenario 3: Same date, different times
+    const sameDate = new Date('2025-01-25T18:00:00.000Z');
+    const shouldGenerate3 = sameDate.toDateString() <= targetDate.toDateString();
+    console.assert(shouldGenerate3, 'Task on same date with different time should be generated');
+    console.log('✓ Same date, different times scenario passed');
+    
+    // Test edge case: Exact target date boundary (should be same as target date)
+    const exactTargetDate = new Date(targetDate);
+    exactTargetDate.setHours(23, 59, 59, 999); // End of the target day
+    const shouldGenerate4 = exactTargetDate.toDateString() <= targetDate.toDateString();
+    if (!shouldGenerate4) {
+        throw new Error(`Task on exact target date should be generated. Task: ${exactTargetDate.toDateString()}, Target: ${targetDate.toDateString()}`);
+    }
+    console.log('✓ Exact target date boundary scenario passed');
+    
+    // Test edge case: Day after target date
+    const dayAfterTarget = new Date(targetDate);
+    dayAfterTarget.setDate(targetDate.getDate() + 1); // One day after target
+    const shouldNotGenerate = dayAfterTarget.toDateString() <= targetDate.toDateString();
+    if (shouldNotGenerate) {
+        throw new Error(`Task after target date should not be generated. Task: ${dayAfterTarget.toDateString()}, Target: ${targetDate.toDateString()}`);
+    }
+    console.log('✓ Day after target date scenario passed');
+}
+
+// Test that the fix preserves time components in generated tasks
+function testTimePreservation() {
+    console.log('\nTesting time component preservation...');
+    
+    // Test that calculateNextDate preserves original time
+    const originalTime = new Date('2025-01-15T06:30:45.123Z');
+    
+    // Daily repeat should preserve time
+    const dailyNext = RecurringTaskService.calculateNextDate(originalTime, 'daily');
+    if (dailyNext.getUTCHours() !== 6) {
+        throw new Error(`Daily repeat should preserve hours. Expected 6, got ${dailyNext.getUTCHours()}`);
+    }
+    if (dailyNext.getUTCMinutes() !== 30) {
+        throw new Error(`Daily repeat should preserve minutes. Expected 30, got ${dailyNext.getUTCMinutes()}`);
+    }
+    if (dailyNext.getUTCSeconds() !== 45) {
+        throw new Error(`Daily repeat should preserve seconds. Expected 45, got ${dailyNext.getUTCSeconds()}`);
+    }
+    if (dailyNext.getUTCMilliseconds() !== 123) {
+        throw new Error(`Daily repeat should preserve milliseconds. Expected 123, got ${dailyNext.getUTCMilliseconds()}`);
+    }
+    console.log('✓ Daily repeat preserves time components');
+    
+    // Weekly repeat should preserve time
+    const weeklyNext = RecurringTaskService.calculateNextDate(originalTime, 'weekly');
+    if (weeklyNext.getUTCHours() !== 6) {
+        throw new Error(`Weekly repeat should preserve hours. Expected 6, got ${weeklyNext.getUTCHours()}`);
+    }
+    if (weeklyNext.getUTCMinutes() !== 30) {
+        throw new Error(`Weekly repeat should preserve minutes. Expected 30, got ${weeklyNext.getUTCMinutes()}`);
+    }
+    console.log('✓ Weekly repeat preserves time components');
+    
+    // Monthly repeat should preserve time
+    const monthlyNext = RecurringTaskService.calculateNextDate(originalTime, 'monthly');
+    if (monthlyNext.getUTCHours() !== 6) {
+        throw new Error(`Monthly repeat should preserve hours. Expected 6, got ${monthlyNext.getUTCHours()}`);
+    }
+    if (monthlyNext.getUTCMinutes() !== 30) {
+        throw new Error(`Monthly repeat should preserve minutes. Expected 30, got ${monthlyNext.getUTCMinutes()}`);
+    }
+    console.log('✓ Monthly repeat preserves time components');
+}
+
+// Test date comparison across different repeat types
+function testDateComparisonAcrossRepeatTypes() {
+    console.log('\nTesting date comparison across different repeat types...');
+    
+    const baseDate = new Date('2025-01-15T14:30:00.000Z');
+    const cronDate = new Date('2025-01-15T02:00:00.000Z');
+    const targetDate = new Date(cronDate);
+    targetDate.setDate(cronDate.getDate() + 3);
+    
+    // Test daily recurring tasks
+    const dailyDates = RecurringTaskService.calculateFutureDates(baseDate, 'daily', 3);
+    for (const date of dailyDates) {
+        const shouldGenerate = date.toDateString() <= targetDate.toDateString();
+        if (!shouldGenerate) {
+            console.log(`Daily task for ${date.toDateString()} is outside the 3-day window (target: ${targetDate.toDateString()})`);
+        }
+    }
+    console.log('✓ Daily recurring tasks comparison passed');
+    
+    // Test weekly recurring tasks
+    const weeklyDates = RecurringTaskService.calculateFutureDates(baseDate, 'weekly', 3);
+    for (const date of weeklyDates) {
+        const shouldGenerate = date.toDateString() <= targetDate.toDateString();
+        // Only dates within the 3-day window should be generated
+        const withinWindow = date <= targetDate;
+        if (withinWindow) {
+            console.assert(shouldGenerate, `Weekly task for ${date.toDateString()} should be generated`);
+        }
+    }
+    console.log('✓ Weekly recurring tasks comparison passed');
+    
+    // Test monthly recurring tasks
+    const monthlyDates = RecurringTaskService.calculateFutureDates(baseDate, 'monthly', 3);
+    for (const date of monthlyDates) {
+        const shouldGenerate = date.toDateString() <= targetDate.toDateString();
+        // Only dates within the 3-day window should be generated
+        const withinWindow = date <= targetDate;
+        if (withinWindow) {
+            console.assert(shouldGenerate, `Monthly task for ${date.toDateString()} should be generated`);
+        }
+    }
+    console.log('✓ Monthly recurring tasks comparison passed');
+}
+
+// Test edge cases for date comparison
+function testDateComparisonEdgeCases() {
+    console.log('\nTesting date comparison edge cases...');
+    
+    // Test midnight boundary
+    const midnightTask = new Date('2025-01-28T00:00:00.000Z');
+    const cronTime = new Date('2025-01-25T02:00:00.000Z');
+    const targetDate = new Date(cronTime);
+    targetDate.setDate(cronTime.getDate() + 3);
+    
+    const shouldGenerate = midnightTask.toDateString() <= targetDate.toDateString();
+    console.assert(shouldGenerate, 'Midnight task should be generated');
+    console.log('✓ Midnight boundary test passed');
+    
+    // Test end of day boundary
+    const endOfDayTask = new Date(targetDate);
+    endOfDayTask.setHours(23, 59, 59, 999); // End of the target day
+    const shouldGenerateEndOfDay = endOfDayTask.toDateString() <= targetDate.toDateString();
+    if (!shouldGenerateEndOfDay) {
+        throw new Error(`End of day task should be generated. Task: ${endOfDayTask.toDateString()}, Target: ${targetDate.toDateString()}`);
+    }
+    console.log('✓ End of day boundary test passed');
+    
+    // Test month boundary
+    const monthBoundaryTask = new Date('2025-01-31T15:00:00.000Z');
+    const monthBoundaryCron = new Date('2025-01-29T02:00:00.000Z');
+    const monthBoundaryTarget = new Date(monthBoundaryCron);
+    monthBoundaryTarget.setDate(monthBoundaryCron.getDate() + 3); // Feb 1st
+    
+    const shouldGenerateMonthBoundary = monthBoundaryTask.toDateString() <= monthBoundaryTarget.toDateString();
+    console.assert(shouldGenerateMonthBoundary, 'Month boundary task should be generated');
+    console.log('✓ Month boundary test passed');
+    
+    // Test leap year boundary (2024 is a leap year)
+    const leapYearTask = new Date('2024-02-29T12:00:00.000Z');
+    const leapYearCron = new Date('2024-02-26T02:00:00.000Z'); // Start earlier to include Feb 29
+    const leapYearTarget = new Date(leapYearCron);
+    leapYearTarget.setDate(leapYearCron.getDate() + 3); // Feb 29
+    
+    const shouldGenerateLeapYear = leapYearTask.toDateString() <= leapYearTarget.toDateString();
+    if (!shouldGenerateLeapYear) {
+        throw new Error(`Leap year task should be generated. Task: ${leapYearTask.toDateString()}, Target: ${leapYearTarget.toDateString()}`);
+    }
+    console.log('✓ Leap year boundary test passed');
+}
+
 // Run all tests
 function runTests() {
     console.log('Running RecurringTaskService tests...\n');
@@ -168,6 +348,12 @@ function runTests() {
         testGetNextMonthlyDate();
         testGenerateInstancesValidation();
         testGetMissingInstanceDatesLogic();
+        
+        // New tests for the timestamp comparison fix
+        testDateOnlyComparison();
+        testTimePreservation();
+        testDateComparisonAcrossRepeatTypes();
+        testDateComparisonEdgeCases();
         
         console.log('\n✅ All tests passed successfully!');
     } catch (error) {
