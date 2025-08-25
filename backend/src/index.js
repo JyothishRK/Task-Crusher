@@ -6,6 +6,7 @@ const userRouter = require('./routers/user');
 const taskRouter = require('./routers/task');
 const healthRouter = require('./routers/health');
 const { validateCookieConfig } = require('./utils/cookieConfig');
+const { initializeCronJobs } = require('./jobs/cronJobs');
 
 const app = express();
 const port = process.env.PORT;
@@ -68,4 +69,7 @@ app.use('*', (req, res) => {
 
 app.listen(port, () => {
     console.log(`Server running at Port ${port}`);
+    
+    // Initialize cron jobs after server starts
+    initializeCronJobs();
 });

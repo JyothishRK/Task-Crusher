@@ -58,6 +58,11 @@ const taskSchema = new mongoose.Schema({
         type: String,
         enum: ['none', 'daily', 'weekly', 'monthly'],
         default: 'none'
+    },
+    parentRecurringId: {
+        type: Number,
+        ref: 'Task',
+        default: null
     }
 }, {
     timestamps: true
@@ -71,6 +76,11 @@ taskSchema.index({ userId: 1, priority: 1 });
 taskSchema.index({ userId: 1, category: 1 });
 taskSchema.index({ parentId: 1 });
 taskSchema.index({ userId: 1, parentId: 1 });
+
+// New indexes for recurring task functionality
+taskSchema.index({ parentRecurringId: 1, dueDate: 1 }); // For recurring instance queries
+taskSchema.index({ userId: 1, parentRecurringId: 1 }); // For user's recurring tasks
+taskSchema.index({ repeatType: 1, parentRecurringId: 1 }); // For cron job queries
 
 // Virtual for formatted due date
 taskSchema.virtual('dueDateFormatted').get(function() {
@@ -111,6 +121,49 @@ taskSchema.methods.getSubtasks = async function() {
     return await Task.find({ parentId: this.taskId, userId: this.userId });
 };
 
+// Method to check if task is a recurring parent (original recurring task)
+taskSchema.methods.isRecurringParent = function() {
+    return this.repeatType !== 'none' && (this.parentRecurringId === null || this.parentRecurringId === undefined);
+};
+
+// Method to check if task is a recurring instance (generated from parent)
+taskSchema.methods.isRecurringInstance = function() {
+    return this.parentRecurringId !== null && this.parentRecurringId !== undefined;
+};
+
+// Method to get all recurring instances of this task
+taskSchema.methods.getRecurringInstances = async function() {
+    if (!this.isRecurringParent()) return [];
+    const Task = mongoose.model('Task');
+    return await Task.find({ 
+        parentRecurringId: this.taskId, 
+        userId: this.userId 
+    }).sort({ dueDate: 1 });
+};
+
+// Method to get future recurring instances from a specific date
+taskSchema.methods.getFutureRecurringInstances = async function(fromDate = new Date()) {
+    if (!this.isRecurringParent()) return [];
+    const Task = mongoose.model('Task');
+    return await Task.find({ 
+        parentRecurringId: this.taskId, 
+        userId: this.userId,
+        dueDate: { $gte: fromDate }
+    }).sort({ dueDate: 1 });
+};
+
+// Method to delete recurring instances from a specific date
+taskSchema.methods.deleteRecurringInstances = async function(fromDate = new Date()) {
+    if (!this.isRecurringParent()) return 0;
+    const Task = mongoose.model('Task');
+    const result = await Task.deleteMany({ 
+        parentRecurringId: this.taskId, 
+        userId: this.userId,
+        dueDate: { $gte: fromDate }
+    });
+    return result.deletedCount;
+};
+
 // Static method to find task by taskId
 taskSchema.statics.findByTaskId = async function(taskId) {
     const task = await this.findOne({ taskId });
@@ -118,6 +171,27 @@ taskSchema.statics.findByTaskId = async function(taskId) {
         throw new Error('Task not found');
     }
     return task;
+};
+
+// Static method to generate recurring instances
+taskSchema.statics.generateRecurringInstances = async function(parentTask, count = 3) {
+    // Avoid circular dependency by calling the service method directly
+    if (!parentTask || !parentTask.repeatType || parentTask.repeatType === 'none') {
+        return [];
+    }
+    
+    const RecurringTaskService = require('../services/recurringTaskService');
+    return await RecurringTaskService.generateInstances(parentTask, count);
+};
+
+// Static method to cleanup recurring instances
+taskSchema.statics.cleanupRecurringInstances = async function(parentTaskId, fromDate, userId) {
+    const result = await this.deleteMany({ 
+        parentRecurringId: parentTaskId, 
+        userId: userId,
+        dueDate: { $gte: fromDate }
+    });
+    return result.deletedCount;
 };
 
 // Pre-save middleware to generate taskId and validate parentId
@@ -163,6 +237,39 @@ taskSchema.pre('save', async function(next) {
         } catch (error) {
             return next(new Error(`Parent validation failed: ${error.message}`));
         }
+    }
+
+    // Validate parentRecurringId if provided
+    if (task.parentRecurringId !== null && task.parentRecurringId !== undefined) {
+        try {
+            const Task = mongoose.model('Task');
+            const parentRecurringTask = await Task.findOne({ taskId: task.parentRecurringId });
+            
+            if (!parentRecurringTask) {
+                return next(new Error('Parent recurring task not found'));
+            }
+            
+            if (parentRecurringTask.userId !== task.userId) {
+                return next(new Error('Parent recurring task must belong to the same user'));
+            }
+            
+            // Ensure the parent recurring task has a repeat type
+            if (parentRecurringTask.repeatType === 'none') {
+                return next(new Error('Parent recurring task must have a repeat type'));
+            }
+            
+            // Prevent self-reference
+            if (parentRecurringTask.taskId === task.taskId) {
+                return next(new Error('Task cannot be its own recurring parent'));
+            }
+        } catch (error) {
+            return next(new Error(`Parent recurring task validation failed: ${error.message}`));
+        }
+    }
+
+    // Validate subtask constraints for recurring tasks
+    if (task.isSubtask() && task.repeatType !== 'none') {
+        return next(new Error('Subtasks cannot have repeat types'));
     }
 
     // Handle repeat logic (existing functionality)
